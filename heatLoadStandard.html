@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Calcul des déperditions thermiques</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .espace-section {
+            margin-top: 20px;
+            border-top: 2px solid #ccc;
+            padding-top: 10px;
+        }
+        input[type="text"], input[type="number"], select {
+            box-sizing: border-box;
+        }
+    </style>
+	<script>
+		var espaces = [];
+		var spaceIdCounter = 0;
+		var wallElements = [];
+		var wallElementsIdCounter = 0;
+		var murInstances = []; // Array to hold all wall instances
+		var murInstanceID = 0; // Global counter to assign unique IDs
+		
+		var otherData = {'heatrecovery':
+							{'checked':false,'efficiency':0},
+						'airtightness':
+							{'choice':"",'value':0}
+						}
+		
+	</script>
+	<script src="functions.js"></script>
+	<link rel="stylesheet" href="style.css">
+
+</head>
+
+<header class="layout-header">
+<div><span class="logo-full">
+<img class="logo" src="https://images.prismic.io/bbri/0f1c879e-8d5e-4201-a0d2-2dbf3bd95d33_Buildwise_Horizontaal_noir_marge.png?auto=compress,format&amp;rect=0,0,2000,500&amp;w=740&amp;h=185" alt="BBRI logo"></span>
+</div>
+<img class="tool-logo" src="https://images.prismic.io/bbri/6cb70e31-2f6b-4657-80b5-a512d17a71c1_heatload_logo.jpg?auto=compress,format" alt="Tool logo">
+
+<div class="right-header">
+	<select id="languageSelector" onchange="switchLanguage(this.value)">
+        <option value="fr">FR</option>
+        <option value="nl">NL</option>
+    </select>
+</div>
+</header>
+
+
+<body>
+	<div class="container">
+
+
+    <h1 lang-key='heat_loss_calculation'>Calcul des déperditions thermiques</h1>
+	<div class="data-buttons">
+        <button id="exportDataBtn">Export Data</button>
+        <button id="importDataBtn">Import Data</button>
+        <input type="file" id="fileInput" style="display: none;" onchange="importData(this)" accept=".json">
+    </div>
+	
+	<div id="tabcontainer">
+	<div id="maintabs"></div>
+	<div id="spacetabs"></div>
+	</div>
+
+
+	<div id="boundaryconditions" class="main-section" >
+    <h2 lang-key="boundaryconditions">Environnements extérieurs et voisins</h2>
+    <button onclick="addBoundary()" lang-key="add_bc">Ajouter un environnement</button>
+    <table id="tableBCS">
+        <tr>
+            <th lang-key="bc_name">Nom de l'espace ou de l'environnement</th>
+            <th lang-key="bc_type">Type d'espace/d'environnement</th>
+            <th lang-key="bc_temperature">Température</th>
+        </tr>
+    </table>
+	</div>
+
+
+	<div id="spaces" class="main-section" >
+    <h2 lang-key="spaces">Espaces</h2>
+    <button onclick="ajouterEspace()" lang-key="add_space">Ajouter un espace</button>
+    <table id="tableEspaces">
+        <tr>
+            <th lang-key="space_name">Nom de l'espace</th>
+            <th lang-key="space_temperature">Température de référence (°C)</th>
+            <th lang-key="floor_area">Surface au sol (m²)</th>
+            <th lang-key="inner_volume">Volume intérieur (m³)</th>
+            <th lang-key="heating_type">Type de chauffage</th>
+            <th lang-key="actions">Action</th>
+        </tr>
+    </table>
+	</div>
+
+	<div id="wall_elements" class="main-section" >
+    <h2 lang-key="walls" >Murs</h2>
+    <button onclick="ajouterMur()" lang-key="add_wall" >Ajouter un mur</button>
+    <table id="tableMurs">
+        <tr>
+            <th lang-key="wall_name" >Nom du mur</th>
+            <th lang-key="u_value">Valeur U</th>
+            <th lang-key="thermal_bridge_coefficient">Coefficient de pont thermique</th>
+            <th lang-key="actions">Action</th>
+        </tr>
+    </table>
+	</div>
+	
+	<div id="ventilation" class="main-section">
+	<h2 lang-key="air_tightness" >Etanchéité à l'air</h2>
+	<select id="airTightnessSelect" onchange="updateAirTightnessUnit()"> 
+		<option value="v50" selected>v50</option>
+		<option value="n50">n50</option>
+		<option value="Q50">Q50</option>
+	</select>
+	<input type="number" id="at_value"  min="10" max="100" />
+	<span id="at_unit">at_unit</span>
+	
+	
+	 <!-- Heat Recovery Checkbox and Efficiency Input -->
+    <div>
+	<h2 lang-key="heat_recovery" >Récupération de chaleur</h2>
+	    
+    <span lang-key="enable_hr"> Enable Heat Recovery </span>
+	<input type="checkbox" id="heatRecoveryCheckbox" onchange="toggleHeatRecoveryEfficiency()"> 
+    <input type="number" id="heatRecoveryEfficiency" min="0" max="100" style="display: none;" placeholder="Rendement" onchange="updateHeatRecoveryEfficiency()"/>
+	<span id="hr_unit" style="display: none;">%</span>
+
+    </div>
+	
+	
+	<h2 lang-key="ventilation" >Ventilation</h2>
+
+	</div>
+
+	
+
+    <div id="espacesContainer">
+        <!-- Espaces and their specific wall relationships will be displayed here -->
+    </div>
+
+
+	</div>
+
+	<script>
+	
+	initTabs()
+	toggleVisibility('spaces')
+	initializeVentilationTable(); // Initialize the ventilation table at start
+	updateAirTightnessUnit()      
+	toggleHeatRecoveryEfficiency() 
+	
+	switchLanguage(getCurrentLanguage())
+
+	document.getElementById('exportDataBtn').addEventListener('click', exportData);
+
+	document.getElementById('importDataBtn').addEventListener('click', function() {
+    document.getElementById('fileInput').click(); // Trigger the hidden file input click
+	
+	
+});
+
+	
+	</script>
+
+</body>
+</html>

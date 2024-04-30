@@ -1,0 +1,61 @@
+
+input[type=button], input[type=submit], select, input[type=number]{
+  padding: 5px 5px;
+  margin: 1px 1px;
+  cursor: pointer;
+  background-color: #fff	;
+  font-size:16px;
+   border-radius: 4px;
+}
+input{width: auto;}
+select{
+width:170px;
+ border-radius: 4px; }
+
+#layersTable .rightalign {
+	text-align:center;
+}
+th {
+vertical-align: text-top;
+}
+
+
+body{
+font-family: neue-haas-unica,sans-serif;
+color: #495057;
+font-size: 16px;
+background-color: #eee;
+margin:0px;	
+}
+
+  .container
+{
+    padding-left: 100px;
+    padding-right: 100px;
+	position: relative
+  }
+  
+  .layout-header
+{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  height: 64px;
+  box-shadow: 0 1px 3px #646464;
+  padding: 0 10px;
+  margin: 0px;
+}
+
+.layout-header .logo, .layout-header .tool-logo
+{
+  height: 50px;
+  max-height: 50px;
+}
+
+
+.data-buttons {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
