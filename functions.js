@@ -4,26 +4,34 @@ function getCurrentLanguage() {
 }
 
 
-function generateSpaceRow(table, espace) {
+function generateSpaceRow(table, space) {
     const row = table.insertRow(-1);  // Append row at the end of the table
     const heatingOptions = [
-        { value: "radiateurs", label: "Radiateurs" },
-        { value: "systemeChauffage", label: "Système de chauffage" }
+        { value: "radiators", label: "Radiateurs" },
+        { value: "floor", label: "Sol" },
+        { value: "equilibrium", label: "No heating" }
     ];
 
+
     // Create cells with input/select elements and set their contents
-    row.insertCell(0).innerHTML = `<input type="text" name="nomEspace${espace.id}" value="${espace.nom}" onchange="updateEspaceName(${espace.id}, this.value)">`;
-    row.insertCell(1).innerHTML = `<input type="number" name="tempRef${espace.id}" value="${espace.temperature}" onchange="updateSpaceProperty(${espace.id}, 'temperature', this.value)">`;
-    row.insertCell(2).innerHTML = `<input type="number" name="surfaceSol${espace.id}" value="${espace.floorarea}" onchange="updateSpaceProperty(${espace.id}, 'floorarea', this.value)">`;
-    row.insertCell(3).innerHTML = `<input type="number" name="volume${espace.id}" value="${espace.volume}" onchange="updateSpaceProperty(${espace.id}, 'volume', this.value)">`;
-    row.insertCell(4).innerHTML = `<select name="typeChauffage${espace.id}" onchange="updateSpaceProperty(${espace.id}, 'heating_type', this.value)">` +
+    row.insertCell(0).innerHTML = `<input type="text" name="nameSpace${space.id}" value="${space.name}" onchange="updateSpaceName(${space.id}, this.value)">`;
+    row.insertCell(1).innerHTML = `<input type="number" name="tempRef${space.id}" value="${space.temperature}" onchange="updateSpaceProperty(${space.id}, 'temperature', this.value)">`;
+    row.insertCell(2).innerHTML = `<input type="number" name="surfaceSol${space.id}" value="${space.floorarea}" onchange="updateSpaceProperty(${space.id}, 'floorarea', this.value)">`;
+    row.insertCell(3).innerHTML = `<input type="number" name="volume${space.id}" value="${space.volume}" onchange="updateSpaceProperty(${space.id}, 'volume', this.value)">`;
+    row.insertCell(4).innerHTML = `<select name="typeChauffage${space.id}" onchange="updateSpaceProperty(${space.id}, 'heating_type', this.value)">` +
         heatingOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('') +
         `</select>`;
-    row.insertCell(5).innerHTML = `<button onclick="deleteSpace(${espace.id})">Delete</button>`;
+    row.insertCell(5).innerHTML = `<button onclick="deleteSpace(${space.id})">Delete</button>`;
+	
+	var dropdown = document.getElementsByName('typeChauffage'+space.id)[0];
+    dropdown.value = space.heating_type; 
+
+	checkSpaceEquilibrium(space);
+
 }
 
 
-function generateBoundaryRow(table, espace, index) {
+function generateBoundaryRow(table, space, index) {
     const row = table.insertRow(-1);  // Append row at the end of the table
     const bctype = [
         { value: "outside", label: "Extérieur" },
@@ -32,38 +40,43 @@ function generateBoundaryRow(table, espace, index) {
     ];
 
     // Create cells with input/select elements and set their contents
-    row.insertCell(0).innerHTML = `<input type="text" name="nomEspace${espace.id}" value="${espace.nom}" onchange="updateEspaceName(${espace.id}, this.value)">`;
-    row.insertCell(1).innerHTML = `<select name="bcType${espace.id}" onchange="updateSpaceProperty(${espace.id}, 'type', this.value)">` +
+    row.insertCell(0).innerHTML = `<input type="text" name="nameSpace${space.id}" value="${space.name}" onchange="updateSpaceName(${space.id}, this.value)">`;
+    row.insertCell(1).innerHTML = `<select name="bcType${space.id}" onchange="updateSpaceProperty(${space.id}, 'type', this.value)">` +
         bctype.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('') +
         `</select>`;
-    row.insertCell(2).innerHTML = `<input type="number" name="tempRef${espace.id}" value="${espace.temperature}" onchange="updateSpaceProperty(${espace.id}, 'temperature', this.value)">`;
-    row.insertCell(3).innerHTML = `<button onclick="deleteSpace(${espace.id})">Delete</button>`;
+    row.insertCell(2).innerHTML = `<input type="number" name="tempRef${space.id}" value="${space.temperature}" onchange="updateSpaceProperty(${space.id}, 'temperature', this.value)">`;
+    row.insertCell(3).innerHTML = `<button onclick="deletSpace(${space.id})">Delete</button>`;
 }
 
 
 
-function ajouterEspace() {
-    const table = document.getElementById('tableEspaces');
-    spaceIdCounter++;
+function addSpace() {
+    const table = document.getElementById('tableSpaces');
+	spaceIdCounter++;
     const newSpace = {
 		type: "heated",
-        nom: `Espace ${spaceIdCounter}`,
+        name: `Space ${spaceIdCounter}`,
         id: spaceIdCounter,
 		temperature:20,
 		floorarea:0,
 		volume:0,
-		heating_type:"",
+		heating_type:"radiators",
         ventilation: {
             "natural_supply_flowrate": 0,
             "mechanical_supply_flowrate": 0,
             "transfer_flowrate": 0,
             "transfer_temperature": 0,
-            "mechanical_extract_flowrate": 0
+            "mechanical_extract_flowrate": 0,
+			"infiltration_flowrate":0,
+			"extra_infiltration_flowrate":0,
+			"ventilation_loss":0
         }
+		
     };
-    espaces.push(newSpace);
+    spaces.push(newSpace);
     generateSpaceRow(table, newSpace);
-    updateMurEspaceSection();
+    updateSpacesWalls();
+	updateResults();
 }
 
 function addBoundary() {
@@ -71,39 +84,120 @@ function addBoundary() {
     spaceIdCounter++;
     const newBoundary = {
 		type: "unheated",
-        nom: `Environnement ${spaceIdCounter}`,
+        name: `Environnement ${spaceIdCounter}`,
         id: spaceIdCounter,
 		temperature:-7,
     };
-    espaces.push(newBoundary);
+    spaces.push(newBoundary);
     generateBoundaryRow(table, newBoundary);
-    updateMurEspaceSection();
+    updateSpacesWalls();
 }
 
 function updateSpaceProperty(spaceId, property, value) {
-    const space = espaces.find(espace => espace.id === spaceId);
+    const space = spaces.find(space => space.id === spaceId);
     if (space) {
-		console.log("chang",property,value)
         space[property] = value;
-    }
+		checkSpaceEquilibrium(space);
+	}
+	
+	
+	
 }
+
+
+function updateResults(){
+    // Define the headers of the table
+    const headers_keys = ["spaces", "transmission_heat_loss", "ventilation_heat_loss", "heatup_loss","total_heat_loss"];
+    
+    // Get the 'results' div
+    const resultsDiv = document.getElementById("resultsContainer");
+    
+	const header = document.createElement("h2");
+    header.setAttribute("lang-key", "results");
+    header.textContent = "Résultats";
+    
+    // Create the table element
+    const table = document.createElement("table");
+    table.border = "1"; // Optional: adds a border to the table
+
+    // Create the table header row
+    const headerRow = document.createElement("tr");
+    headers_keys.forEach(header => {
+        const th = document.createElement("th");
+		th.setAttribute('lang-key',header)
+		th.textContent = translations[getCurrentLanguage()][header];
+
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+
+
+    // Create the table rows based on the provided data
+    spaces.forEach(space => {
+		
+		if (space.type == "heated"){
+		
+			const row = document.createElement("tr");
+
+			const td = document.createElement("td");		
+			td.textContent = space.name;
+			row.appendChild(td);
+
+			const td1 = document.createElement("td");
+			td1.textContent = space.ventilation.ventilation_loss;
+			row.appendChild(td1);
+			
+			table.appendChild(row);
+		}
+    });
+
+    // Clear previous content in 'results' and append the new table
+    resultsDiv.innerHTML = "";
+	resultsDiv.appendChild(header)
+    resultsDiv.appendChild(table);
+}
+
+
+	
+
+
+function checkSpaceEquilibrium(space){
+	console.log("check equil");
+	console.log(space["heating_type"])
+	if (space['heating_type']=="equilibrium"){
+		
+			console.log("disable")
+			input = document.getElementsByName(`tempRef${space.id}`)[0];			// disable the temperature field from this row
+			input.disabled = true;
+
+		}
+	else{
+			input = document.getElementsByName(`tempRef${space.id}`)[0];			// disable the temperature field from this row
+			input.disabled = false;
+
+		}
+		
+}
+
+
 function generateWallElementRow(table, wElement) {
     const row = table.insertRow(-1); // Append row at the end of the table
 
     // Create cells with input/select elements and set their contents
-    row.insertCell(0).innerHTML = `<input type="text" name="nomMur${wElement.id}" value="${wElement.nom}" onchange="updateWallName(${wElement.id}, this.value)">`;
+    row.insertCell(0).innerHTML = `<input type="text" name="nameMur${wElement.id}" value="${wElement.name}" onchange="updateWallName(${wElement.id}, this.value)">`;
     row.insertCell(1).innerHTML = `<input type="number" name="valeurU${wElement.id}" value="${wElement.uValue}" onchange="updateWallUValue(${wElement.id}, this.value)">`;
     row.insertCell(2).innerHTML = `<input type="number" name="pontThermique${wElement.id}" value="${wElement.thermalBridge}" onchange="updateWallThermalBridge(${wElement.id}, this.value)">`;
     row.insertCell(3).innerHTML = `<button onclick="deleteWallElement(${wElement.id})">Delete</button>`;
 }
 
 
-function ajouterMur() {
+function addMur() {
     const table = document.getElementById('tableMurs');
     wallElementsIdCounter++;
 
     const newWallElement = {
-        nom: `Mur ${wallElementsIdCounter}`,
+        name: `Mur ${wallElementsIdCounter}`,
         id: wallElementsIdCounter,
         uValue: '',  // Assuming default values or form inputs can populate these
         thermalBridge: ''  // Assuming default values or form inputs can populate these
@@ -111,7 +205,7 @@ function ajouterMur() {
 
     wallElements.push(newWallElement);
     generateWallElementRow(table, newWallElement);
-    updateMurEspaceSection();
+    updateSpacesWalls();
 }
 
 function updateTabs(){
@@ -119,88 +213,105 @@ function updateTabs(){
     spaceTabs.innerHTML = ''; // Clear previous tabs to refresh them
     initTabs(); // Re-initialize tabs if necessary or maintain existing tab initialization outside this function
 
-    var container = document.getElementById('espacesContainer');
+    var container = document.getElementById('spacesContainer');
     container.innerHTML = ''; // Clear existing tables
 
-    espaces.forEach((espace, index) => {
+    spaces.forEach((space, index) => {
 
-		if (espace.type == "heated"){
+		if (space.type == "heated"){
 
 			// Create a tab for each space
 			var tab = document.createElement('button');
-			tab.textContent = espace.nom;
-			tab.id = 'tab-espace-' + index;
+			tab.textContent = space.name;
+			tab.setAttribute('class','tab');
+			tab.id = 'tab-space-' + index;
 			tab.onclick = function () {
-				toggleVisibility(`espace-${index}`);
+				toggleVisibility(`space-${index}`);
 			};
 			spaceTabs.appendChild(tab);
 		}
 	})
+	
+	setTabsColorBehavior()
+
+	
+	
 }	
 
-function updateMurEspaceSection() {
+function updateSpacesWalls() {
 	
 	updateTabs()
+	updateAllWallInstanceLosses()
 
-    var container = document.getElementById('espacesContainer');
+
+    var container = document.getElementById('spacesContainer');
     container.innerHTML = ''; // Clear existing tables
 
-    espaces.forEach((espace, index) => {
+    spaces.forEach((space, index) => {
 
-        var espaceDiv = document.createElement('div');
-        espaceDiv.className = 'espace-section';
-        espaceDiv.id = `espace-${index}`;
-        espaceDiv.style.display = 'none'; // Start with the table hidden
+        var spaceDiv = document.createElement('div');
+        spaceDiv.className = 'space-section';
+        spaceDiv.id = `space-${index}`;
+        spaceDiv.style.display = 'none'; // Start with the table hidden
  
 
-		espaceDiv.innerHTML = `
-            <h3>Espace: ${espace.nom}</h3>
-            <button onclick="prepareNewLine(${index})">Ajouter Mur</button>
+		spaceDiv.innerHTML = `
+            <h3>Space: ${space.name}</h3>
+            <button lang-key="add_wall" onclick="prepareNewLine(${index})">${translations[getCurrentLanguage()]['add_wall']}</button>
             <table>
                 <tr>
                     <th lang-key='wall'>Mur</th>
                     <th lang-key='neighbour_space'>Espace Voisin</th>
                     <th lang-key='wall_area'>Surface du Mur (m²)</th>
                     <th lang-key='actions'>Actions</th>
+					<th lang-key="transmissionLoss"><transmission_heat_loss></th>
                 </tr>
-                ${murInstances.filter(mur => mur.spaces.includes(espace.id)).map(mur => {
-                    const linkedSpaceId = mur.spaces.find(id => id !== espace.id);
-                    const linkedSpace = espaces.find(e => e.id === linkedSpaceId);
+                ${wallInstances.filter(wall => wall.spaces.includes(space.id)).map(wall => {
+                    const linkedSpaceId = wall.spaces.find(id => id !== space.id);
+                    const linkedSpace = spaces.find(e => e.id === linkedSpaceId);
+					
+					const multiplier = wall.spaces.indexOf(space.id) == 0 ? 1 : -1; // heatloss computed from as space[0].t - space[1].t. So, adapting sign to position of current space in the list
+					
                     return `
                         <tr>
 						   <td>
-								<select onchange="updateMurType(${mur.id}, this.value, ${index})">
+								<select onchange="updateMurType(${wall.id}, this.value, ${index})">
 								<option value="">
 									${wallElements.map(wElement => `
-										<option value="${wElement.id}" ${mur.elementId == wElement.id ? 'selected' : ''}>${wElement.nom}</option>
+										<option value="${wElement.id}" ${wall.elementId == wElement.id ? 'selected' : ''}>${wElement.name}</option>
 									`).join('')}
 								</select>
 							</td>
 							<td>
-								<select onchange="updateLinkedSpace(${mur.id}, this.value, ${index})">
+								<select onchange="updateLinkedSpace(${wall.id}, this.value, ${index})">
 								<option value="">
-									${espaces.filter(space => space.id !== espace.id).map(space => `
-										<option value="${space.id}" ${linkedSpaceId == space.id ? 'selected' : ''}>${space.nom}</option>
+									${spaces.filter(otherSpace => otherSpace.id !== space.id).map(otherSpace => `
+										<option value="${otherSpace.id}" ${linkedSpaceId == otherSpace.id ? 'selected' : ''}>${otherSpace.name}</option>
 									`).join('')}
 								</select>
 							</td>
-							<td><input type="number" value="${mur.Area}" onchange="updateMurArea(${mur.id}, this.value, ${index})"></td>
-							<td><button onclick="deleteMurInstance(${mur.id},${index})">Supprimer</button></td>
+							<td><input type="number" value="${wall.Area}" onchange="updateMurArea(${wall.id}, this.value, ${index})"></td>
+							<td><button onclick="deleteMurInstance(${wall.id},${index})">Supprimer</button></td>
+							<td><input name=lossWallInstance${wall.id} type="text" value=${wall.transmissionLoss*multiplier} disabled="disabled"></td>
+
                         </tr>
                     `;
                 }).join('')}
             </table>
         `;
-        container.appendChild(espaceDiv);
+        container.appendChild(spaceDiv);
     });
 
     createVentilationTableStructure(); // Ensure the ventilation table is also updated
+	updateAllVentilationLosses()
 }
 
 
 
 function toggleVisibility(input) {
-    var sections = document.querySelectorAll('.espace-section, .main-section');
+    var sections = document.querySelectorAll('.space-section, .main-section');
+
+	console.log("toggle",input)
 
     sections.forEach(section => {
         if (section.id == input) {
@@ -211,49 +322,49 @@ function toggleVisibility(input) {
     });
 
 }
-function prepareNewLine(indexEspace) {
-    const espace = espaces[indexEspace];
-    const newMurId = murInstanceID++; // Increment the global murInstanceID
+function prepareNewLine(indexSpace) {
+    const space = spaces[indexSpace];
+    const newMurId = wallInstanceID++; // Increment the global wallInstanceID
 
-    // Create a temporary placeholder for the new mur in murInstances
-    murInstances.push({
+    // Create a temporary placeholder for the new wall in wallInstances
+    wallInstances.push({
         id: newMurId,
-        spaces: [espace.id], // Initially only include the current space
+        spaces: [space.id], // Initially only include the current space
         elementId: "", // Initialize without a type
-        Area: 0 // Initialize with zero area
+        Area: 0, // Initialize with zero area,
+		transmissionLoss: 0
     });
 
-    // This function refreshes the UI to include the new mur placeholder for editing
-    updateMurEspaceSection();
+    // This function refreshes the UI to include the new wall placeholder for editing
+    updateSpacesWalls();
 
-    // This function makes sure the UI for the specific espace is visible for editing
-    toggleVisibility(`espace-${indexEspace}`);
+    // This function makes sure the UI for the specific space is visible for editing
+    toggleVisibility(`space-${indexSpace}`);
 }
 
 
-function updateEspaceName(index, newName) {
-    espaces[index].nom = newName;
-    updateMurEspaceSection();
+
+function updateSpaceName(id, newName) {
+    const index = spaces.findIndex(space => space.id === id);
+    if (index !== -1) {  // Check if the space was found
+        spaces[index].name = newName;
+        updateSpacesWalls();
+    } else {
+        console.error("Space not found with id:", id);
+    }
 }
 
-function updateMurName(indexEspace, indexMur, newName) {
-    espaces[indexEspace].wallElements[indexMur].nom = newName;
-}
 
-function updateVoisinName(indexEspace, indexMur, newName) {
-    espaces[indexEspace].wallElements[indexMur].espaceVoisin = newName;
-}
-
-function updateSurface(indexEspace, indexMur, newSurface) {
-    espaces[indexEspace].wallElements[indexMur].surface = newSurface;
+function updateSurface(indexSpace, indexMur, newSurface) {
+    spaces[indexSpace].wallElements[indexMur].surface = newSurface;
 }
 
 function updateWallName(wallElementId, newName) {
     const element = wallElements.find(element => element.id === wallElementId);
     if (element) {
-        element.nom = newName;
+        element.name = newName;
     }
-	updateMurEspaceSection()
+	updateSpacesWalls()
 }
 function updateWallUValue(wallElementId, newUValue) {
     const element = wallElements.find(element => element.id === wallElementId);
@@ -274,12 +385,13 @@ function initTabs() {
     tabContainer.innerHTML = ''; // Clear existing tabs
 
 
-    var fixedTabs = ['boundaryconditions','spaces', 'wall_elements', 'ventilation']
+    var fixedTabs = ['spaces','boundaryconditions', 'wall_elements', 'ventilation']
 
     for (var i = 0; i < fixedTabs.length; i++) {
         (function (tabName) {
             var tab = document.createElement('button');
 			tab.setAttribute('lang-key',tabName)
+			tab.setAttribute('class','tab')
             tab.textContent = translations[getCurrentLanguage()][tabName];
 
             tab.id = 'tab-' + tabName;
@@ -289,6 +401,20 @@ function initTabs() {
             tabContainer.appendChild(tab);
         })(fixedTabs[i]); // Pass the current tab name to the IIFE
     }
+
+	var resultsbutton = document.createElement('button');
+	resultsbutton.textContent = "results";
+	resultsbutton.id = 'tab-results';
+	resultsbutton.setAttribute('class','tab')
+	resultsbutton.setAttribute('lang-key','results')
+	resultsbutton.textContent = translations[getCurrentLanguage()]['results'];
+	resultsbutton.onclick = function () {
+			toggleVisibility(`resultsContainer`);
+	};
+	resultsTab = document.getElementById('resultstabs')
+	resultsTab.innerHTML = '';
+	resultsTab.appendChild(resultsbutton)
+
 
 }
 
@@ -330,27 +456,44 @@ function createVentilationTableStructure() {
         th.textContent = translations[getCurrentLanguage()][param];
         headerRow.appendChild(th);
     });
+	
+	var th = document.createElement('th');
+	th.setAttribute('lang-key', 'ventilation_loss');
+	th.textContent = translations[getCurrentLanguage()]["ventilation_loss"];
+	headerRow.appendChild(th);
+    
+	
     table.appendChild(headerRow);
 
     // Create rows for each space
-    espaces.forEach(espace => {
+    spaces.forEach(space => {
 			
-		if (espace.type == "heated"){
+		if (space.type == "heated"){
 			
 			var row = document.createElement('tr');
 			var labelCell = document.createElement('td');
-			labelCell.textContent = espace.nom;
+			labelCell.textContent = space.name;
 			row.appendChild(labelCell);
 
 			parameters.forEach(param => {
 				var cell = document.createElement('td');
 				var input = document.createElement('input');
 				input.type = 'number';
-				input.value = espace.ventilation[param] || '';
-				input.onchange = () => saveVentilationData(espace.id, param, input.value);
+				input.value = space.ventilation[param] || '';
+				input.onchange = () => saveVentilationData(space.id, param, input.value);
 				cell.appendChild(input);
 				row.appendChild(cell);
 			});
+
+			var cell = document.createElement('td');
+			var input = document.createElement('input');
+			input.type = 'text';
+			input.value = '';
+			input.disabled = true; // Make the input read-only
+			input.name = "ventilationLoss"+space.id
+			cell.appendChild(input);
+			row.appendChild(cell);
+			
 
 			table.appendChild(row);
 		}
@@ -396,144 +539,95 @@ function updateVentilationTableHeaders() {
 }
 
 
-function saveVentilationData(espaceId, parameter, value) {
-    var espace = espaces.find(e => e.id === espaceId);
-    if (espace) {
-        espace.ventilation[parameter] = value;
+function saveVentilationData(spaceId, parameter, value) {
+    var space = spaces.find(e => e.id === spaceId);
+    if (space) {
+        space.ventilation[parameter] = value;
+		updateVentilationLoss(space);
     }
 }
 
-function updateMurArea(murId, newArea,callerspaceid) {
-    const mur = murInstances.find(m => m.id === murId);
-    if (mur) {
-        mur.Area = Number(newArea);
+function updateMurArea(wallId, newArea,callerspaceid) {
+    const wallInstance = wallInstances.find(m => m.id === wallId);
+    if (wallInstance) {
+        wallInstance.Area = Number(newArea);
 	}
-	updateMurEspaceSection(); // Optionally refresh UI to reflect changes
-	toggleVisibility(`espace-${callerspaceid}`)
+
+	updateWallInstanceLoss(wallInstance)
+	updateSpacesWalls(); // Optionally refresh UI to reflect changes
+	toggleVisibility(`space-${callerspaceid}`)
 }
 
 
 
-// Function to update the type of a mur based on the selected option in the dropdown
-function updateMurType(murId, newTypeId,callerspaceid) {
-    // Find the mur object in murInstances array with the given id
-	murId = Number(murId);  // Convert to number
+// Function to update the type of a wall based on the selected option in the dropdown
+function updateMurType(wallId, newTypeId,callerspaceid) {
+    // Find the wall object in wallInstances array with the given id
+	wallId = Number(wallId);  // Convert to number
     newTypeId = Number(newTypeId);
-    const mur = murInstances.find(m => m.id === murId);
-    if (mur) {
-        // Update the murType property of the found mur object
-        mur.elementId = newTypeId;
+    const wallInstance = wallInstances.find(m => m.id === wallId);
+    if (wallInstance) {
+        // Update the wallType property of the found wall object
+        wallInstance.elementId = newTypeId;
     } else {
-        console.error('Mur not found with id:', murId);
+        console.error('Mur not found with id:', wallId);
     }
-	updateMurEspaceSection(); // Optionally refresh UI to reflect changes
-	toggleVisibility(`espace-${callerspaceid}`)
+
+	updateWallInstanceLoss(wallInstance)
+
+	updateSpacesWalls(); // Optionally refresh UI to reflect changes
+	toggleVisibility(`space-${callerspaceid}`)
 }
 
-// Function to update the linked space of a mur based on the selected option in the dropdown
-function updateLinkedSpace(murId, newSpaceId,callerspaceid) {
-	murId = Number(murId);  // Convert to number
+// Function to update the linked space of a wall based on the selected option in the dropdown
+function updateLinkedSpace(wallId, newSpaceId,callerspaceid) {
+	wallId = Number(wallId);  // Convert to number
     newSpaceId = Number(newSpaceId);
 
-    // Find the mur object in murInstances array with the given id
-    const mur = murInstances.find(m => m.id === murId);
-    if (mur) {
+
+    // Find the wall object in wallInstances array with the given id
+    const wallInstance = wallInstances.find(m => m.id === wallId);
+    if (wallInstance) {
         // Update the spaces property to include the new linked space.
         // This assumes that the first space in the array remains unchanged and the second space is the linked one.
-        // If the mur only had one space originally (the current space), add the new space as linked.
-        if (mur.spaces.length === 1) {
-            mur.spaces.push(newSpaceId); // Add new linked space if only one was initially present
+        // If the wall only had one space originally (the current space), add the new space as linked.
+        if (wallInstance.spaces.length === 1) {
+            wallInstance.spaces.push(newSpaceId); // Add new linked space if only one was initially present
         } else {
-            mur.spaces[1] = newSpaceId; // Replace existing linked space
+            wallInstance.spaces[1] = newSpaceId; // Replace existing linked space
         }
 		
     } else {
-        console.error('Mur not found with id:', murId);
+        console.error('Mur not found with id:', wallId);
     }
-	updateMurEspaceSection(); // Optionally refresh UI to reflect changes
-	toggleVisibility(`espace-${callerspaceid}`)
+
+	updateWallInstanceLoss(wallInstance)
+
+	updateSpacesWalls(); // Optionally refresh UI to reflect changes
+	toggleVisibility(`space-${callerspaceid}`)
 
 
 }
 
-function deleteMurInstance(murId,callerspaceid) {
-    // Filter out the mur to be deleted from the murInstances array
-    murInstances = murInstances.filter(mur => mur.id !== murId);
+function deleteMurInstance(wallId,callerspaceid) {
+    // Filter out the wall to be deleted from the wallInstances array
+    wallInstances = wallInstances.filter(wall => wall.id !== wallId);
 
     // Optionally, re-render the section or the whole table to reflect the change
-    updateMurEspaceSection();  // Assuming this function re-renders the updated tables
-	toggleVisibility(`espace-${callerspaceid}`)
+    updateSpacesWalls();  // Assuming this function re-renders the updated tables
+	toggleVisibility(`space-${callerspaceid}`)
 
 }
 
 
 
 function displayMurInstance(){
-	for (var i=0;i<murInstances.length;i++){
-		console.log(murInstances[i])
+	for (var i=0;i<wallInstances.length;i++){
+		console.log(wallInstances[i])
 	}
 }
 
 
-var translations = {
-    'fr': {
-        "heat_loss_calculation": "Calcul des déperditions thermiques",
-        "spaces": "Espaces",
-        "add_space": "Ajouter un espace",
-        "space_name": "Nom de l'espace",
-        "space_temperature": "Température (°C)",
-        "floor_area": "Surface au sol (m²)",
-        "interior_volume": "Volume intérieur (m³)",
-        "heating_type": "Type de chauffage",
-        "walls": "Murs",
-        "add_wall": "Ajouter un mur",
-        "wall_name": "Nom du mur",
-        "u_value": "Valeur U",
-        "thermal_bridge_coefficient": "Coefficient de pont thermique",
-        "ventilation": "Ventilation",
-		"wall_elements":"Types de parois",
-		"natural_supply_flowrate": "Débit d'alimentation naturelle [m³/h]",
-		"mechanical_supply_flowrate": "Débit d'alimentation mécanique [m³/h]",
-		"transfer_flowrate": "Débit de transfert [m³/h]",
-		"transfer_temperature": "Température de l'air transféré [°C]",
-		"mechanical_extract_flowrate": "Débit d'extraction mécanique [m³/h]",
-		"air_tightness":"Etanchéité à l'air",
-		"enable_hr": "Récupération de chaleur ?",
-		"heat_recovery":"Récupération de chaleur",
-		"boundaryconditions":"Environnements voisins"
-
-    },
-	'nl': {
-        "heat_loss_calculation": "Warmteverlies berekening",
-        "spaces": "Ruimtes",
-        "add_space": "Ruimte toevoegen",
-        "space_name": "Naam",
-        "space_temperature": "Binnentemperatuur (°C)",
-        "floor_area": "Vloeroppervlakte (m²)",
-        "interior_volume": "Binnenvolume (m³)",
-        "heating_type": "Type de chauffage",
-        "walls": "Wanden",
-        "add_wall": "Wand toevoegen",
-        "wall_name": "Naam",
-        "u_value": "U-waarde",
-        "thermal_bridge_coefficient": "Koudebrug coefficient",
-        "ventilation": "Ventilatie",
-		"wall_elements":"Constructief elementen",
-		"natural_supply_flowrate": "Natuurlijk toevoer [m³/h]",
-		"mechanical_supply_flowrate": "Mecanische toevoer [m³/h]",
-		"transfer_flowrate": "Doorvoer [m³/h]",
-		"transfer_temperature": "Doorvoerlucht temperatuur [°C]",
-		"mechanical_extract_flowrate": "Mecanische afvoer [m³/h]",
-		"air_tightness":"Luchtdicththeid",
-		"enable_hr": "Warmterecuperatie ?",
-		"heat_recovery":"Warmterecuperatie",
-		"boundaryconditions":"Randvoorwarden"
-
-
-    },
-
-    // Add additional languages here
-};
 
 function switchLanguage(lang) {
     document.querySelectorAll("[lang-key]").forEach(function(element) {
@@ -562,25 +656,28 @@ function updateAirTightnessUnit() {
         default:
             unitDisplay.textContent = "";  // No unit by default or if something goes wrong
     }
+	otherData['airtightness']['choice']=select.value
 }
 function deleteSpace(spaceId) {
-    // Check if the space is referenced in any mur instances
-    const isReferenced = murInstances.some(mur => mur.spaces.includes(spaceId));
+    // Check if the space is referenced in any wall instances
+    const isReferenced = wallInstances.some(wall => wall.spaces.includes(spaceId));
 
     if (isReferenced) {
         alert("Cannot delete this space because it is referenced in wall instances.");
     } else {
         // Proceed with deletion: Remove the space from the array
-        espaces = espaces.filter(espace => espace.id !== spaceId);
+        spaces = spaces.filter(space => space.id !== spaceId);
 
 		updateTabs();
         updateSpacesTable();  
 		updateBoundaryTable();
+		updateSpacesWalls();
+		updateResults()
     }
 }
 function deleteWallElement(wallElementId) {
-    // Check if the wall element is referenced in any mur instances
-    const isReferenced = murInstances.some(mur => mur.elementId === wallElementId);
+    // Check if the wall element is referenced in any wall instances
+    const isReferenced = wallInstances.some(wall => wall.elementId === wallElementId);
 
     if (isReferenced) {
         alert("Cannot delete this wall element because it is referenced in wall instances.");
@@ -590,23 +687,23 @@ function deleteWallElement(wallElementId) {
         updateWallElementsTable();  // Re-render the wall elements table to reflect deletion
 
         // Optional: Update other components that might be affected
-        updateMurEspaceSection();
+        updateSpacesWalls();
     }
 }
 
 
 function updateSpacesTable() {
-    const table = document.getElementById('tableEspaces');
+    const table = document.getElementById('tableSpaces');
     // Clear existing table rows except for the header
     while (table.rows.length > 1) {
         table.deleteRow(1);
     }
 
     // Re-add rows for all remaining spaces
-    espaces.forEach((espace, index) => {
+    spaces.forEach((space, index) => {
 		
-		if (espace.type == "heated"){
-			generateSpaceRow(table, espace, index);
+		if (space.type == "heated"){
+			generateSpaceRow(table, space, index);
 		}
     });
 }
@@ -619,10 +716,10 @@ function updateBoundaryTable() {
     }
 
     // Re-add rows for all remaining spaces
-    espaces.forEach((espace, index) => {
+    spaces.forEach((space, index) => {
 		
-		if (espace.type != "heated"){
-			generateBoundaryRow(table, espace, index);
+		if (space.type != "heated"){
+			generateBoundaryRow(table, space, index);
 		}
     });
 }
@@ -643,11 +740,11 @@ function updateWallElementsTable() {
 
 function exportData() {
 	
-    // Assuming `espaces` and `wallElements` are your data
+    // Assuming `spaces` and `wallElements` are your data
     const dataToExport = {
-        espaces: espaces,
+        spaces: spaces,
         wallElements: wallElements,
-		murInstances: murInstances,
+		wallInstances: wallInstances,
 		otherData: otherData
     };
     const jsonData = JSON.stringify(dataToExport, null, 4); // Beautify the JSON
@@ -682,23 +779,26 @@ function importData() {
     reader.onload = function(event) {
         try {
             const jsonData = JSON.parse(event.target.result);
-            if (jsonData.espaces && jsonData.wallElements && jsonData.murInstances) {
-                espaces = jsonData.espaces;
+            if (jsonData.spaces && jsonData.wallElements && jsonData.wallInstances) {
+                spaces = jsonData.spaces;
                 wallElements = jsonData.wallElements;
-                murInstances = jsonData.murInstances;
+                wallInstances = jsonData.wallInstances;
 				otherData = jsonData.otherData;
 
                 // Set counters to one more than the highest ID found in the imported data
-                spaceIdCounter = Math.max(...espaces.map(espace => espace.id)) + 1;
+                spaceIdCounter = Math.max(...spaces.map(space => space.id)) + 1;
                 wallElementsIdCounter = Math.max(...wallElements.map(element => element.id)) + 1;
-                murInstanceID = Math.max(...murInstances.map(instance => instance.id)) + 1;
+                wallInstanceID = Math.max(...wallInstances.map(instance => instance.id)) + 1;
 
                 // Update the UI
                 updateSpacesTable();
 				updateBoundaryTable();
                 updateWallElementsTable();
-                updateMurEspaceSection();
+                updateSpacesWalls();
 				updateHeatRecovery();
+				updateAirTightness();
+				updateAllVentilationLosses();
+				updateResults()
             } else {
                 throw new Error('Invalid data structure');
             }
@@ -743,3 +843,84 @@ function updateHeatRecoveryEfficiency() {
     // Update the efficiency value in the global variable
     	otherData['heatrecovery']['efficiency'] = efficiencyInput.value;
 }
+
+
+function updateAirTightness(){
+	const select = document.getElementById('airTightnessSelect');
+	const at_input = document.getElementById('at_value');
+
+	select.value = otherData['airtightness']['choice']
+	at_input.value = otherData['airtightness']['value']
+
+	updateAirTightnessUnit()
+}
+
+function updateAirTightnessValue(){
+	otherData['airtightness']['value'] = document.getElementById('at_value').value;
+	updateAllVentilationLosses()
+}
+
+		
+
+
+function updateWallInstanceLoss(wallInstance){
+	
+	// still to hande negative display
+
+	loss = computeWallInstanceHeatLoss(wallInstance,spaces, wallElements, wallInstances)
+	wallInstance.transmissionLoss = loss.toFixed(0);
+
+
+}
+
+function updateAllWallInstanceLosses(){
+	
+
+	wallInstances.forEach(wallInstance => {updateWallInstanceLoss(wallInstance)});
+	
+}
+	
+
+
+
+
+function updateVentilationLoss(space){
+	
+	loss = computeVentilationLoss(space,spaces,otherData)
+	space.ventilation.ventilation_loss = loss
+	
+	field = document.getElementsByName("ventilationLoss"+space.id)[0]
+	field.value = loss.toFixed(0)
+	
+	
+}
+
+
+function updateAllVentilationLosses(){
+	
+	spaces.forEach(space => {
+		if (space.type == "heated"){
+			updateVentilationLoss(space)
+		}
+	})
+}
+
+
+
+function setTabsColorBehavior(){
+  // Select all buttons with the class 'myButton'
+	const buttons = document.querySelectorAll('.tab');
+
+
+	// Add event listener to each button
+	buttons.forEach(button => {
+		button.addEventListener('click', function() {
+		// Remove 'active' class from all buttons
+		buttons.forEach(btn => btn.classList.remove('active-tab'));
+
+		// Add 'active' class to the clicked button
+		this.classList.add('active-tab');
+		});
+	})
+}
+

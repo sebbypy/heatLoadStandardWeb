@@ -18,7 +18,7 @@
         th {
             background-color: #f2f2f2;
         }
-        .espace-section {
+        .space-section {
             margin-top: 20px;
             border-top: 2px solid #ccc;
             padding-top: 10px;
@@ -28,21 +28,23 @@
         }
     </style>
 	<script>
-		var espaces = [];
+		var spaces = [];
 		var spaceIdCounter = 0;
 		var wallElements = [];
 		var wallElementsIdCounter = 0;
-		var murInstances = []; // Array to hold all wall instances
-		var murInstanceID = 0; // Global counter to assign unique IDs
+		var wallInstances = []; // Array to hold all wall instances
+		var wallInstanceID = 0; // Global counter to assign unique IDs
 		
 		var otherData = {'heatrecovery':
 							{'checked':false,'efficiency':0},
 						'airtightness':
-							{'choice':"",'value':0}
+							{'choice':"v50",'value':0}
 						}
 		
 	</script>
+	<script src="translations.js"></script>
 	<script src="functions.js"></script>
+	<script src="computeFunctions.js"></script>
 	<link rel="stylesheet" href="style.css">
 
 </head>
@@ -76,6 +78,7 @@
 	<div id="tabcontainer">
 	<div id="maintabs"></div>
 	<div id="spacetabs"></div>
+	<div id="resultstabs"></div>
 	</div>
 
 
@@ -94,11 +97,11 @@
 
 	<div id="spaces" class="main-section" >
     <h2 lang-key="spaces">Espaces</h2>
-    <button onclick="ajouterEspace()" lang-key="add_space">Ajouter un espace</button>
-    <table id="tableEspaces">
+    <button onclick="addSpace()" lang-key="add_space">Ajouter un espace</button>
+    <table id="tableSpaces">
         <tr>
             <th lang-key="space_name">Nom de l'espace</th>
-            <th lang-key="space_temperature">Température de référence (°C)</th>
+            <th lang-key="space_temperature">Température (°C)</th>
             <th lang-key="floor_area">Surface au sol (m²)</th>
             <th lang-key="inner_volume">Volume intérieur (m³)</th>
             <th lang-key="heating_type">Type de chauffage</th>
@@ -109,10 +112,10 @@
 
 	<div id="wall_elements" class="main-section" >
     <h2 lang-key="walls" >Murs</h2>
-    <button onclick="ajouterMur()" lang-key="add_wall" >Ajouter un mur</button>
+    <button onclick="addMur()" lang-key="add_wall" >Ajouter un wall</button>
     <table id="tableMurs">
         <tr>
-            <th lang-key="wall_name" >Nom du mur</th>
+            <th lang-key="wall_name" >Nom du wall</th>
             <th lang-key="u_value">Valeur U</th>
             <th lang-key="thermal_bridge_coefficient">Coefficient de pont thermique</th>
             <th lang-key="actions">Action</th>
@@ -127,7 +130,7 @@
 		<option value="n50">n50</option>
 		<option value="Q50">Q50</option>
 	</select>
-	<input type="number" id="at_value"  min="10" max="100" />
+	<input type="number" id="at_value"  min="10" max="100" onchange="updateAirTightnessValue()"/>
 	<span id="at_unit">at_unit</span>
 	
 	
@@ -149,9 +152,14 @@
 
 	
 
-    <div id="espacesContainer">
+    <div id="spacesContainer">
         <!-- Espaces and their specific wall relationships will be displayed here -->
     </div>
+
+	<div id="resultsContainer" class="main-section">
+	
+		<!-- Summary of results as a table of heat losses by space-->
+	</div>
 
 
 	</div>
@@ -159,10 +167,13 @@
 	<script>
 	
 	initTabs()
+	updateTabs()
 	toggleVisibility('spaces')
+	document.getElementById('tab-spaces').classList.add('active-tab')
 	initializeVentilationTable(); // Initialize the ventilation table at start
 	updateAirTightnessUnit()      
 	toggleHeatRecoveryEfficiency() 
+	updateResults()
 	
 	switchLanguage(getCurrentLanguage())
 

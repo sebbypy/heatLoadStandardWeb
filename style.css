@@ -1,12 +1,21 @@
 
-input[type=button], input[type=submit], select, input[type=number]{
+button, input[type=submit], select, input[type=number], input[type=text]{
   padding: 5px 5px;
   margin: 1px 1px;
   cursor: pointer;
   background-color: #fff	;
   font-size:16px;
-   border-radius: 4px;
+  border-radius: 4px;
 }
+
+
+.active-tab {
+	background-color: #0087b7; /* Change this to the color you want when clicked */
+	color: white; /* Optional: change text color */
+ }
+
+
+
 input{width: auto;}
 select{
 width:170px;
