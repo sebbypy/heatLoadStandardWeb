@@ -36,16 +36,21 @@
 		var wallInstanceID = 0; // Global counter to assign unique IDs
 		
 		var otherData = {'heatrecovery':
-							{'checked':false,'efficiency':0},
+							{'checked':false,'efficiency':0,'meanExtractTemperature':null,'supplyTemperature':null},
 						'airtightness':
 							{'choice':"v50",'value':0}
 						}
 		
 	</script>
+	<script src="datamodel.js"></script>
 	<script src="translations.js"></script>
 	<script src="functions.js"></script>
 	<script src="computeFunctions.js"></script>
+	<script src="solveLinearSystem.js"></script>
 	<link rel="stylesheet" href="style.css">
+	<script>
+		var model = new DataModel();
+	</script>
 
 </head>
 
@@ -84,7 +89,7 @@
 
 	<div id="boundaryconditions" class="main-section" >
     <h2 lang-key="boundaryconditions">Environnements extérieurs et voisins</h2>
-    <button onclick="addBoundary()" lang-key="add_bc">Ajouter un environnement</button>
+    <button onclick="handleAddBoundary()" lang-key="add_bc">Ajouter un environnement</button>
     <table id="tableBCS">
         <tr>
             <th lang-key="bc_name">Nom de l'espace ou de l'environnement</th>
@@ -97,7 +102,7 @@
 
 	<div id="spaces" class="main-section" >
     <h2 lang-key="spaces">Espaces</h2>
-    <button onclick="addSpace()" lang-key="add_space">Ajouter un espace</button>
+    <button onclick="handleAddSpace()" lang-key="add_space">Ajouter un espace</button>
     <table id="tableSpaces">
         <tr>
             <th lang-key="space_name">Nom de l'espace</th>
@@ -112,7 +117,7 @@
 
 	<div id="wall_elements" class="main-section" >
     <h2 lang-key="walls" >Murs</h2>
-    <button onclick="addMur()" lang-key="add_wall" >Ajouter un wall</button>
+    <button onclick="handleAddWallElement()" lang-key="add_wall" >Ajouter un wall</button>
     <table id="tableMurs">
         <tr>
             <th lang-key="wall_name" >Nom du wall</th>
@@ -125,12 +130,12 @@
 	
 	<div id="ventilation" class="main-section">
 	<h2 lang-key="air_tightness" >Etanchéité à l'air</h2>
-	<select id="airTightnessSelect" onchange="updateAirTightnessUnit()"> 
+	<select id="airTightnessSelect" onchange="handleAirTightnessChange()"> 
 		<option value="v50" selected>v50</option>
 		<option value="n50">n50</option>
 		<option value="Q50">Q50</option>
 	</select>
-	<input type="number" id="at_value"  min="10" max="100" onchange="updateAirTightnessValue()"/>
+	<input type="number" id="at_value"  min="1" max="100" onchange="handleAirTightnessChange()"/>
 	<span id="at_unit">at_unit</span>
 	
 	
@@ -139,9 +144,16 @@
 	<h2 lang-key="heat_recovery" >Récupération de chaleur</h2>
 	    
     <span lang-key="enable_hr"> Enable Heat Recovery </span>
-	<input type="checkbox" id="heatRecoveryCheckbox" onchange="toggleHeatRecoveryEfficiency()"> 
-    <input type="number" id="heatRecoveryEfficiency" min="0" max="100" style="display: none;" placeholder="Rendement" onchange="updateHeatRecoveryEfficiency()"/>
+	<input type="checkbox" id="heatRecoveryCheckbox" onchange="handleHeatRecoveryCheckBox()"> 
+    <input type="number" id="heatRecoveryEfficiency" min="0" max="100" style="display: none;" placeholder="Rendement" onchange="handleHeatRecoveryEfficiencyChange()"/>
 	<span id="hr_unit" style="display: none;">%</span>
+
+	<p></p>
+    <span lang-key="mean_extract_t" id="meanExtractTemperature_label" style="display: none;"></span>
+    <input type="text" id="meanExtractTemperature_value" style="display: none;" disabled="true"/>
+	<p></p>
+    <span lang-key="supply_t" id="supplyTemperature_label" style="display: none;"></span>
+    <input type="text" id="supplyTemperature_value" min="0" max="100" style="display: none;"  disabled="true" />
 
     </div>
 	
@@ -166,14 +178,17 @@
 
 	<script>
 	
-	initTabs()
-	updateTabs()
+	//initTabs()
+	renderTabs()
+	addOutsideBoundary()
 	toggleVisibility('spaces')
 	document.getElementById('tab-spaces').classList.add('active-tab')
 	initializeVentilationTable(); // Initialize the ventilation table at start
-	updateAirTightnessUnit()      
-	toggleHeatRecoveryEfficiency() 
-	updateResults()
+
+	renderAirTightness()      
+	
+	handleHeatRecoveryCheckBox() 
+	renderResults()
 	
 	switchLanguage(getCurrentLanguage())
 

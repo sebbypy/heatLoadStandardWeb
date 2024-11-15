@@ -33,8 +33,12 @@ var translations = {
 		"bc_temperature": "Température",
 		"transmission_heat_loss":"Perte par transmission",
 		"ventilation_heat_loss":"Perte par ventilation et infiltrations",
-		"heatup_loss":"Surpuissance de relance"
-		
+		"heatup_loss":"Surpuissance de relance",
+		"outside":"Extérieur",
+		"total_heat_loss":"Puissance totale",
+		"mean_extract_t":"Température moyenne de l'air extrait (°C)",
+		"supply_t":"Température après récupération de chaleur (°C)",
+		"null_extract_flow":"Débit d'extraction total nul, pas de calcul possible"
 
     },
 	'nl': {
@@ -71,7 +75,14 @@ var translations = {
 		"bc_temperature": "Temperatuur",
 		"transmission_heat_loss":"Transmissieverlies",
 		"ventilation_heat_loss":"Ventilatieverlies",
-		"heatup_loss":"Opwarmvermogen"
+		"heatup_loss":"Opwarmvermogen",
+		"outside":"Buiten",
+		"total_heat_loss":"Totaal vermogen",
+		"mean_extract_t":"Afgezogen lucht gemmidelde temperatuur (°C)",
+		"supply_t":"Toevoer luchttemperatuur (°C)",
+		"null_extract_flow":"Nul totaal afvoerdebiet, geen berekening mogelijk"
+
+
     },
 
     // Add additional languages here
