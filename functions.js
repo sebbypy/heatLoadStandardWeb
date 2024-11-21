@@ -23,127 +23,55 @@ function initializeVentilationTable() {
 // --------------------------------------------------
 
 function handleAddSpace() {
-    const table = document.getElementById('tableSpaces');
-	spaceIdCounter++;
-    const newSpace = {
-		type: "heated",
-        name: `Space ${spaceIdCounter}`,
-        id: spaceIdCounter,
-		temperature:20,
-		floorarea:0,
-		volume:0,
-		heating_type:"radiators",
-		transmission_heat_loss: 0,
-        ventilation: {
-            "natural_supply_flowrate": 0,
-            "mechanical_supply_flowrate": 0,
-            "transfer_flowrate": 0,
-            "transfer_temperature": 0,
-            "mechanical_extract_flowrate": 0,
-			"infiltration_flowrate":0,
-			"extra_infiltration_flowrate":0,
-			"ventilation_loss":0
-        }
-		
-    };
-    spaces.push(newSpace);
-	model.createNewSpace(`Space ${spaceIdCounter}`)
-	console.log(model.spaces)
-    
-	//renderSpaceRow(table, newSpace);
-	//renderSpacesTable();
-    //renderWallInstances();
-	//renderResults();
+
+	model.createNewSpace(`Space ${model.spaceIdCounter}`)
 	renderAll() // new space has 0 flow and no walls --> no computation
 	
 }
 
 function handleAddBoundary() {
-    const table = document.getElementById('tableBCS');
-    spaceIdCounter++;
-    const newBoundary = {
-		type: "unheated",
-        name: `Environnement ${spaceIdCounter}`,
-        id: spaceIdCounter,
-		temperature:-7,
-    };
-    spaces.push(newBoundary);
-	model.createNewBoundary(`Environnement ${spaceIdCounter}`)
-	//renderBoundaryRow(table, newBoundary);
-    //renderWallInstances();
+
+	model.createNewBoundary(`Environnement ${model.spaceIdCounter}`)
 	renderAll()
 }
 
 function addOutsideBoundary() {
-    const table = document.getElementById('tableBCS');
-    const newBoundary = {
-		type: "outside",
-        name: `Outside`,
-        id: 0,
-		temperature:-7,
-    };
-    spaces.push(newBoundary);
 	
 	model.createNewBoundary('outside')
-
-	//renderAll()
+	renderAll()
 }
 
 
-
 function handleSpacePropertyChange(spaceId, property, value) {
-    const space = spaces.find(space => space.id === spaceId);
+    const space = model.spaces.find(space => space.id === spaceId);
     if (space) {
         space[property] = value;
 		computeAll()
 		renderAll()
 	}
 }
-	
 
 function handleAddWallElement() {
-    const table = document.getElementById('tableMurs');
-    wallElementsIdCounter++;
-
-    const newWallElement = {
-        name: `Mur ${wallElementsIdCounter}`,
-        id: wallElementsIdCounter,
-        uValue: '',  // Assuming default values or form inputs can populate these
-        thermalBridge: ''  // Assuming default values or form inputs can populate these
-    };
-
-    wallElements.push(newWallElement);
-
+    
+	model.createNewWallElement("Mur")
 	renderAll() // new element not yet used, no calc
-    //renderWallElementRow(table, newWallElement);
-    //renderWallInstances();
 }
 
 function handleAddWallInstance(indexSpace) {
-    const space = spaces[indexSpace];
-    const newMurId = wallInstanceID++; // Increment the global wallInstanceID
 
-    // Create a temporary placeholder for the new wall in wallInstances
-    wallInstances.push({
-        id: newMurId,
-        spaces: [space.id], // Initially only include the current space
-        elementId: "", // Initialize without a type
-        Area: 0, // Initialize with zero area,
-		transmissionLoss: 0
-    });
+    const space = model.spaces[indexSpace];
 
+	model.createNewWallInstance(space.id)
 	renderAll() // 0 area wall, no calculation needed
 
-    // This function makes sure the UI for the specific space is visible for editing
     toggleVisibility(`space-${indexSpace}`);
 }
 
 
-
 function handleSpaceNameChange(id, newName) {
-    const index = spaces.findIndex(space => space.id === id);
+    const index = model.spaces.findIndex(space => space.id === id);
     if (index !== -1) {  // Check if the space was found
-        spaces[index].name = newName;
+        model.spaces[index].name = newName;
         renderWallInstances();
     } else {
         console.error("Space not found with id:", id);
@@ -153,7 +81,7 @@ function handleSpaceNameChange(id, newName) {
 
 
 function handleWallNameChange(wallElementId, newName) {
-    const element = wallElements.find(element => element.id === wallElementId);
+    const element = model.wallElements.find(element => element.id === wallElementId);
     if (element) {
         element.name = newName;
     }
@@ -163,47 +91,42 @@ function handleWallNameChange(wallElementId, newName) {
 function handleWalUValueChange(wallElementId, newUValue) {
 	
 	// updating model
-    const element = wallElements.find(element => element.id === wallElementId);
-    if (element) {
-        element.uValue = parseFloat(newUValue);
+    const welement = model.wallElements.find(element => element.id === wallElementId);
+    if (welement) {
+        welement.uValue = parseFloat(newUValue);
     }
-	
-	// render dependent element
-	//renderWallInstances()
 	computeAll()
 	renderAll()
 }
 
 function handleWallThermalBridgeChange(wallElementId, newThermalBridge) {
-    const element = wallElements.find(element => element.id === wallElementId);
-    if (element) {
-        element.thermalBridge = parseFloat(newThermalBridge);
+    const welement = model.wallElements.find(welement => welement.id === wallElementId);
+    if (welement) {
+        welement.thermalBridge = parseFloat(newThermalBridge);
     }
 	computeAll()
 	renderAll()
-	//renderWallInstances()
-
 }
 
 function handleVentilationChange(spaceId, parameter, value){
-    var space = spaces.find(e => e.id === spaceId);
+    var space = model.spaces.find(e => e.id === spaceId);
     if (space) {
         space.ventilation[parameter] = value;
-		//computeVentilationLoss(space,spaces,otherData);
 		computeAll()
 		renderAll()
     }
-	//renderVentilationTable()
 }
 
 function handleWallInstanceAreaChange(wallId, newArea,callerspaceid) {
-    const wallInstance = wallInstances.find(m => m.id === wallId);
+	console.log("area change",callerspaceid)
+    const wallInstance = model.wallInstances.find(m => m.id === wallId);
     if (wallInstance) {
         wallInstance.Area = Number(newArea);
 	}
-
-	computeWallInstanceLoss(wallInstance,spaces,wallElements,wallInstances)
-	renderWallInstances(); // Optionally refresh UI to reflect changes
+	console.log("wallinstance",wallInstance)
+	computeAll()
+	console.log("wallinstance2",wallInstance)
+	renderAll()
 	toggleVisibility(`space-${callerspaceid}`)
 }
 
@@ -212,7 +135,7 @@ function handleWallInstanceAreaChange(wallId, newArea,callerspaceid) {
 function handleWallInstanceTypeChange(wallId, newTypeId,callerspaceid) {
 	wallId = Number(wallId);  // Convert to number
     newTypeId = Number(newTypeId);
-    const wallInstance = wallInstances.find(m => m.id === wallId);
+    const wallInstance = model.wallInstances.find(m => m.id === wallId);
     if (wallInstance) {
         wallInstance.elementId = newTypeId;
     } else {
@@ -231,7 +154,7 @@ function handleNeighbourSpaceChange(wallId, newSpaceId,callerspaceid) {
 
 
     // Find the wall object in wallInstances array with the given id
-    const wallInstance = wallInstances.find(m => m.id === wallId);
+    const wallInstance = model.wallInstances.find(m => m.id === wallId);
     if (wallInstance) {
         if (wallInstance.spaces.length === 1) {
             wallInstance.spaces.push(newSpaceId); // Add new linked space if only one was initially present
@@ -252,7 +175,7 @@ function handleNeighbourSpaceChange(wallId, newSpaceId,callerspaceid) {
 
 function handleDeleteWallInstance(wallId,callerspaceid) {
 
-    wallInstances = wallInstances.filter(wall => wall.id !== wallId);
+    model.wallInstances = model.wallInstances.filter(wall => wall.id !== wallId);
 
     computeAll()
 	renderAll()
@@ -261,17 +184,52 @@ function handleDeleteWallInstance(wallId,callerspaceid) {
 
 }
 
+function handleDeleteSpace(spaceId) {
+    // Check if the space is referenced in any wall instances
+    const isReferenced = model.wallInstances.some(wall => wall.spaces.includes(spaceId));
+
+    if (isReferenced) {
+        alert("Cannot delete this space because it is referenced in wall instances.");
+    } else {
+        // Proceed with deletion: Remove the space from the array
+        model.spaces = model.spaces.filter(space => space.id !== spaceId);
+
+		renderTabs();
+        renderSpacesTable();  
+		renderBoundariesTable();
+		renderWallInstances();
+		renderRerenderResults()
+    }
+}
+
+
+function handleDeleteWallElement(wallElementId) {
+    // Check if the wall element is referenced in any wall instances
+    const isReferenced = wallInstances.some(wall => wall.elementId === wallElementId);
+
+    if (isReferenced) {
+        alert("Cannot delete this wall element because it is referenced in wall instances.");
+    } else {
+        // Proceed with deletion: Remove the wall element from the array
+        wallElements = wallElements.filter(wElement => wElement.id !== wallElementId);
+        renderWallElements();  // Re-render the wall elements table to reflect deletion
+
+        // Optional: Update other components that might be affected
+        renderWallInstances();
+    }
+}
+
 
 // ----------------------
 // Compute full case
 // ----------------------
 
 function computeAll(){
-	computeEquilibriumTemperatures()
-	computeExtractMeanTemperature()
-	computeSupplyTemperature()
-	computeAllWallInstanceLosses()
-	computeAllVentilationLosses()
+	//computeEquilibriumTemperatures()
+	model.computeExtractMeanTemperature()
+	model.computeSupplyTemperature()
+	model.computeAllWallInstanceLosses()
+	model.computeAllVentilationLosses()
 }
 
 
@@ -396,38 +354,51 @@ function renderResults(){
     });
     table.appendChild(headerRow);
 
+	let totals = [0, 0, 0, 0]; // For transmission_heat_loss, ventilation_heat_loss, heatup_loss, total_heat_loss
+
+
     // Create the table rows based on the provided data
-    spaces.forEach(space => {
+    model.spaces.forEach(space => {
 		
 		if (space.type == "heated"){
 		
-			const row = document.createElement("tr");
+       const row = document.createElement("tr");
 
-			const td = document.createElement("td");		
-			td.textContent = space.name;
-			row.appendChild(td);
+            // Create and append the 'spaces' cell
+            const spaceCell = document.createElement("td");
+            spaceCell.textContent = space.name;
+            row.appendChild(spaceCell);
 
-			const td0 = document.createElement("td");
-			td0.textContent = space.transmission_heat_loss.toFixed(0);
-			row.appendChild(td0);
+            // Calculate values for the row
+            const values = [
+                space.transmission_heat_loss,
+                space.ventilation.ventilation_loss,
+                0, // Assuming heatup_loss is 0 for now
+                space.transmission_heat_loss + space.ventilation.ventilation_loss
+            ];
 
-			const td1 = document.createElement("td");
-			td1.textContent = space.ventilation.ventilation_loss.toFixed(0);
-			row.appendChild(td1);
+            // Append cells and update totals
+            values.forEach((value, index) => {
+                const cell = document.createElement("td");
+                cell.textContent = value.toFixed(0);
+                row.appendChild(cell);
+                totals[index] += value;
+            });
 
-			const td2 = document.createElement("td");
-			td2.textContent = 0;
-			row.appendChild(td2);
-
-
-			const td3 = document.createElement("td");
-			td3.textContent = (space.ventilation.ventilation_loss+space.transmission_heat_loss).toFixed(0);
-			row.appendChild(td3);
-			
-			
-			table.appendChild(row);
-		}
+            table.appendChild(row);		}
     });
+
+	// Create a total row and append it
+    const totalRow = document.createElement("tr");
+	totalRow.classList.add('total-row')
+    totalRow.innerHTML = `<td lang-key="total">${translations[getCurrentLanguage()]["total"]}</td>`;
+    totals.forEach(total => {
+        const totalCell = document.createElement("td");
+        totalCell.textContent = total.toFixed(0);
+        totalRow.appendChild(totalCell);
+    });
+    table.appendChild(totalRow);
+
 
     // Clear previous content in 'results' and append the new table
     resultsDiv.innerHTML = "";
@@ -448,6 +419,9 @@ function renderWallElementRow(table, wElement) {
 
 function renderTabs(){
 
+    const activeTab = document.querySelector('.tab.active-tab');
+	const activeTabId = activeTab ? activeTab.id :'tab-spaces';
+
     renderMainTabs(); 
 
 	var spaceTabs = document.getElementById('spacetabs')
@@ -456,7 +430,7 @@ function renderTabs(){
     var container = document.getElementById('spacesContainer');
     container.innerHTML = ''; // Clear existing tables
 
-    spaces.forEach((space, index) => {
+    model.spaces.forEach((space, index) => {
 
 		if (space.type == "heated"){
 
@@ -471,8 +445,12 @@ function renderTabs(){
 			spaceTabs.appendChild(tab);
 		}
 	})
+
+	document.getElementById(activeTabId).classList.add('active-tab') // restore default active tab or previouslys active tabe
+
 	
 	setTabsColorBehavior()
+	
 	
 }	
 
@@ -494,15 +472,15 @@ function setTabsColorBehavior(){
 
 
 function renderWallInstances() {
-	
-	//renderTabs()
-	//computeAllWallInstanceLosses()
-
 
     var container = document.getElementById('spacesContainer');
     container.innerHTML = ''; // Clear existing tables
 
-    spaces.forEach((space, index) => {
+	console.log("render wall instance")
+
+    model.spaces.forEach((space, index) => {
+
+		console.log("space",space.name,index,space.id)
 
 		var spaceTotalLoss = 0;
 		var spaceTotalSurface = 0;
@@ -511,63 +489,124 @@ function renderWallInstances() {
         spaceDiv.className = 'space-section';
         spaceDiv.id = `space-${index}`;
         spaceDiv.style.display = 'none'; // Start with the table hidden
+
+		header = document.createElement("h3")
+		header.textContent = `Space: ${space.name}`;
+		spaceDiv.appendChild(header);
  
+		const addButton = document.createElement('button');
+		addButton.setAttribute('lang-key', 'add_wall');
+		addButton.textContent = translations[getCurrentLanguage()]['add_wall'];
+		addButton.onclick = () => handleAddWallInstance(index);
+		spaceDiv.appendChild(addButton);
 
-		spaceDiv.innerHTML = `
-            <h3>Space: ${space.name}</h3>
-            <button lang-key="add_wall" onclick="handleAddWallInstance(${index})">${translations[getCurrentLanguage()]['add_wall']}</button>
-            <table>
-                <tr>
-                    <th lang-key='wall'>Mur</th>
-                    <th lang-key='neighbour_space'>Espace Voisin</th>
-                    <th lang-key='wall_area'>Surface du Mur (m²)</th>
-					<th lang-key="transmission_heat_loss">${translations[getCurrentLanguage()]['transmission_heat_loss']}</th>
-                    <th lang-key='actions'>Actions</th>
-                </tr>
-                ${wallInstances.filter(wall => wall.spaces.includes(space.id)).map(wall => {
-                    const linkedSpaceId = wall.spaces.find(id => id !== space.id);
-                    const linkedSpace = spaces.find(e => e.id === linkedSpaceId);
-					
-					const multiplier = wall.spaces.indexOf(space.id) == 0 ? 1 : -1; // heatloss computed from as space[0].t - space[1].t. So, adapting sign to position of current space in the list
+		// Create table
+		const table = document.createElement('table');
+		spaceDiv.appendChild(table);
 
-					spaceTotalLoss += multiplier*wall.transmissionLoss
-					spaceTotalSurface += wall.Area
+		// Add table header
+		const headerRow = document.createElement('tr');
+		['wall', 'neighbour_space', 'wall_area', 'transmission_heat_loss', 'actions'].forEach(key => {
+			const th = document.createElement('th');
+			th.setAttribute('lang-key', key);
+			th.textContent = translations[getCurrentLanguage()][key] || key;
+			headerRow.appendChild(th);
+		});
+		table.appendChild(headerRow);
 
-					
-                    return `
-                        <tr>
-						   <td>
-								<select onchange="handleWallInstanceTypeChange(${wall.id}, this.value, ${index})">
-								<option value="">
-									${wallElements.map(wElement => `
-										<option value="${wElement.id}" ${wall.elementId == wElement.id ? 'selected' : ''}>${wElement.name}</option>
-									`).join('')}
-								</select>
-							</td>
-							<td>
-								<select onchange="handleNeighbourSpaceChange(${wall.id}, this.value, ${index})">
-								<option value="">
-									${spaces.filter(otherSpace => otherSpace.id !== space.id).map(otherSpace => `
-										<option value="${otherSpace.id}" ${linkedSpaceId == otherSpace.id ? 'selected' : ''}>${otherSpace.name}</option>
-									`).join('')}
-								</select>
-							</td>
-							<td><input type="number" value="${wall.Area}" onchange="handleWallInstanceAreaChange(${wall.id}, this.value, ${index})"></td>
-							<td><input name=lossWallInstance${wall.id} type="text" value=${(wall.transmissionLoss*multiplier).toFixed(0)} disabled="disabled"></td>
-							<td><button onclick="handleDeleteWallInstance(${wall.id},${index})">Supprimer</button></td>
+		// Add rows for each wall instance
+			model.wallInstances
+				.filter(wall => wall.spaces.includes(space.id))
+				.forEach(wall => {
+					const row = document.createElement('tr');
+					const linkedSpaceId = wall.spaces.find(id => id !== space.id);
+					const linkedSpace = model.spaces.find(e => e.id === linkedSpaceId);
 
-                        </tr>
-                    `;
-                }).join('')}
-				<tr>
-				<td>TOTAL</td>
-				<td></td>
-				<td>${spaceTotalSurface.toFixed(1)}</td>
-				<td>${spaceTotalLoss.toFixed(0)}</td>
-				<td></td>
-				<tr>
-            </table>
-        `;
+					const multiplier = wall.spaces.indexOf(space.id) === 0 ? 1 : -1;
+					spaceTotalLoss += multiplier * wall.transmissionLoss;
+					spaceTotalSurface += wall.Area;
+
+					// Wall Element Type Dropdown
+					const wallElementCell = document.createElement('td');
+					const wallElementSelect = document.createElement('select');
+					wallElementSelect.onchange = () => handleWallInstanceTypeChange(wall.id, wallElementSelect.value, index);
+					const placeholderOption = document.createElement('option');
+					placeholderOption.value = '';
+					wallElementSelect.appendChild(placeholderOption);
+
+					model.wallElements.forEach(wElement => {
+						const option = document.createElement('option');
+						option.value = wElement.id;
+						option.textContent = wElement.name;
+						console.log("IDS",wElement.id,wall.elementId)
+						if (wElement.id === wall.elementId) {console.log("in if");option.selected = true;}
+						wallElementSelect.appendChild(option);
+					});
+					wallElementCell.appendChild(wallElementSelect);
+					row.appendChild(wallElementCell);
+
+					// Neighbour Space Dropdown
+					const neighbourCell = document.createElement('td');
+					const neighbourSelect = document.createElement('select');
+					neighbourSelect.onchange = () => handleNeighbourSpaceChange(wall.id, neighbourSelect.value, index);
+					const placeholderOption2 = document.createElement('option');
+					placeholderOption2.value = '';
+					neighbourSelect.appendChild(placeholderOption2);
+					model.spaces
+						.filter(otherSpace => otherSpace.id !== space.id)
+						.forEach(otherSpace => {
+							const option = document.createElement('option');
+							option.value = otherSpace.id;
+							option.textContent = otherSpace.name;
+							if (otherSpace.id === linkedSpaceId) option.selected = true;
+							neighbourSelect.appendChild(option);
+						});
+					neighbourCell.appendChild(neighbourSelect);
+					row.appendChild(neighbourCell);
+
+					// Wall Area Input
+					const areaCell = document.createElement('td');
+					const areaInput = document.createElement('input');
+					areaInput.type = 'number';
+					areaInput.value = wall.Area;
+					areaInput.onchange = () => handleWallInstanceAreaChange(wall.id, areaInput.value, index);
+					areaCell.appendChild(areaInput);
+					row.appendChild(areaCell);
+
+					// Transmission Loss Input
+					const lossCell = document.createElement('td');
+					const lossInput = document.createElement('input');
+					lossInput.type = 'text';
+					lossInput.name = `lossWallInstance${wall.id}`;
+					lossInput.value = (wall.transmissionLoss * multiplier).toFixed(0);
+					lossInput.disabled = true;
+					lossCell.appendChild(lossInput);
+					row.appendChild(lossCell);
+
+					// Delete Button
+					const actionsCell = document.createElement('td');
+					const deleteButton = document.createElement('button');
+					deleteButton.textContent = 'Supprimer';
+					deleteButton.onclick = () => handleDeleteWallInstance(wall.id, index);
+					actionsCell.appendChild(deleteButton);
+					row.appendChild(actionsCell);
+
+					table.appendChild(row);
+				});
+
+		
+		
+		 // Add total row
+		const totalRow = document.createElement('tr');
+
+		['TOTAL', '', spaceTotalSurface.toFixed(1), spaceTotalLoss.toFixed(0), ''].forEach((text, i) => {
+			const cell = document.createElement(i === 2 || i === 3 ? 'td' : 'td');
+			cell.textContent = text;
+			totalRow.appendChild(cell);
+		});
+
+		table.appendChild(totalRow);
+		
         container.appendChild(spaceDiv);
 		space.transmission_heat_loss = spaceTotalLoss
 	});
@@ -616,8 +655,19 @@ function renderVentilationTable() {
 	
     table.appendChild(headerRow);
 
+	// Initialize totals object
+	var totals = {
+		natural_supply_flowrate: 0,
+		mechanical_supply_flowrate: 0,
+		transfer_flow_rate: null,
+		transfer_temperature: null,
+		mechanical_extract_flowrate: 0,
+		transfer_temperature:null,
+		loss:0
+	};
+
     // Create rows for each space
-    spaces.forEach(space => {
+    model.spaces.forEach(space => {
 			
 		if (space.type == "heated"){
 			
@@ -634,6 +684,12 @@ function renderVentilationTable() {
 				input.onchange = () => handleVentilationChange(space.id, param, input.value);
 				cell.appendChild(input);
 				row.appendChild(cell);
+				
+				// Update total for this parameter if the value is a valid number
+                var value = parseFloat(input.value);
+                if (!isNaN(value) && totals[param] != null) {
+                    totals[param] += value;
+                }
 			});
 
 			var cell = document.createElement('td');
@@ -644,11 +700,35 @@ function renderVentilationTable() {
 			input.name = "ventilationLoss"+space.id
 			cell.appendChild(input);
 			row.appendChild(cell);
+			totals['loss'] += space.ventilation.ventilation_loss
 			
 
 			table.appendChild(row);
 		}
     });
+	
+	// Add total row
+    var totalRow = document.createElement('tr');
+	totalRow.classList.add('total-row')
+    totalRow.innerHTML = '<td lang-key="total">' + translations[getCurrentLanguage()]["total"] + '</td>';
+    Object.keys(totals).forEach(key => {
+        var totalCell = document.createElement('td');
+		console.log("totals",totals[key])
+		if (totals[key] != null) {
+			totalCell.textContent = totals[key].toFixed(0); // Display totals rounded to integers
+		}
+		else{
+			totalCell.textContent = ''
+		}
+        totalRow.appendChild(totalCell);
+
+    });
+
+    // Empty cell for the "ventilation_loss" column in the total row
+    //var emptyCell = document.createElement('td');
+    //totalRow.appendChild(emptyCell);
+
+    table.appendChild(totalRow);
 }
 
 
@@ -662,7 +742,7 @@ function renderSpacesTable() {
     }
 
     // Re-add rows for all remaining spaces
-    spaces.forEach((space, index) => {
+    model.spaces.forEach((space, index) => {
 		if (space.type == "heated"){
 			renderSpaceRow(table, space, index);
 		}
@@ -677,7 +757,7 @@ function renderBoundariesTable() {
     }
 
     // Re-add rows for all remaining spaces
-    spaces.forEach((space, index) => {
+    model.spaces.forEach((space, index) => {
 		
 		if (space.type != "heated"){
 			renderBoundaryRow(table, space, index);
@@ -693,7 +773,7 @@ function renderWallElements() {
     }
 
     // Re-add rows for all remaining wall elements
-    wallElements.forEach(wElement => {
+    model.wallElements.forEach(wElement => {
         renderWallElementRow(table, wElement);
     });
 }
@@ -701,10 +781,10 @@ function renderWallElements() {
 function renderHeatRecovery(){
 	
 	var checkbox = document.getElementById('heatRecoveryCheckbox');
-    checkbox.checked = otherData['heatrecovery']['checked']
+    checkbox.checked = model.otherData['heatrecovery']['checked']
 
 	var input = document.getElementById('heatRecoveryEfficiency');
-  	input.value  =otherData['heatrecovery']['efficiency']  ;
+  	input.value  = model.otherData['heatrecovery']['efficiency']  ;
 
 	input.style.display = checkbox.checked ? 'inline' : 'none';  // Show input if checkbox is checked
 	
@@ -713,10 +793,10 @@ function renderHeatRecovery(){
 
 	
 	document.getElementById('meanExtractTemperature_value').style.display = checkbox.checked ? 'inline':'none'
-	document.getElementById('meanExtractTemperature_value').value = otherData.heatrecovery.meanExtractTemperature !== null ? otherData.heatrecovery.meanExtractTemperature.toFixed(0) : translations[getCurrentLanguage()]["null_extract_flow"];
+	document.getElementById('meanExtractTemperature_value').value = model.otherData.heatrecovery.meanExtractTemperature !== null ? model.otherData.heatrecovery.meanExtractTemperature.toFixed(0) : translations[getCurrentLanguage()]["null_extract_flow"];
 
 	document.getElementById('supplyTemperature_value').style.display = checkbox.checked ? 'inline':'none'
-	document.getElementById('supplyTemperature_value').value = otherData.heatrecovery.supplyTemperature.toFixed(0)
+	document.getElementById('supplyTemperature_value').value = model.otherData.heatrecovery.supplyTemperature.toFixed(0)
 
 	document.getElementById('meanExtractTemperature_label').style.display = checkbox.checked ? 'inline':'none'
 	document.getElementById('supplyTemperature_label').style.display = checkbox.checked ? 'inline':'none'
@@ -729,7 +809,7 @@ function renderAirTightness(){
 	unitDisplay = document.getElementById("at_unit")
 
     // Check the selected value and update the unit display accordingly
-    switch(otherData.airtightness.choice) {
+    switch(model.otherData.airtightness.choice) {
         case 'v50':
             unitDisplay.textContent = "(m³/h)/m²";  // Set the unit for v50
             break;
@@ -743,7 +823,7 @@ function renderAirTightness(){
             unitDisplay.textContent = "";  // No unit by default or if something goes wrong
     }
 	
-	document.getElementById('at_value').value = otherData.airtightness.value
+	document.getElementById('at_value').value = model.otherData.airtightness.value
 }
 
 
@@ -812,55 +892,12 @@ function switchLanguage(lang) {
 
 
 
-function handleDeleteSpace(spaceId) {
-    // Check if the space is referenced in any wall instances
-    const isReferenced = wallInstances.some(wall => wall.spaces.includes(spaceId));
-
-    if (isReferenced) {
-        alert("Cannot delete this space because it is referenced in wall instances.");
-    } else {
-        // Proceed with deletion: Remove the space from the array
-        spaces = spaces.filter(space => space.id !== spaceId);
-
-		renderTabs();
-        renderSpacesTable();  
-		renderBoundariesTable();
-		renderWallInstances();
-		renderResults()
-    }
-}
-
-
-function handleDeleteWallElement(wallElementId) {
-    // Check if the wall element is referenced in any wall instances
-    const isReferenced = wallInstances.some(wall => wall.elementId === wallElementId);
-
-    if (isReferenced) {
-        alert("Cannot delete this wall element because it is referenced in wall instances.");
-    } else {
-        // Proceed with deletion: Remove the wall element from the array
-        wallElements = wallElements.filter(wElement => wElement.id !== wallElementId);
-        renderWallElements();  // Re-render the wall elements table to reflect deletion
-
-        // Optional: Update other components that might be affected
-        renderWallInstances();
-    }
-}
-
-
 
 
 
 function exportData() {
 	
-    // Assuming `spaces` and `wallElements` are your data
-    const dataToExport = {
-        spaces: spaces,
-        wallElements: wallElements,
-		wallInstances: wallInstances,
-		otherData: otherData
-    };
-    const jsonData = JSON.stringify(dataToExport, null, 4); // Beautify the JSON
+    const jsonData = JSON.stringify(model, null, 4); // Beautify the JSON
     const blob = new Blob([jsonData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
@@ -892,16 +929,17 @@ function importData() {
     reader.onload = function(event) {
         try {
             const jsonData = JSON.parse(event.target.result);
+			model = new DataModel()
             if (jsonData.spaces && jsonData.wallElements && jsonData.wallInstances) {
-                spaces = jsonData.spaces;
-                wallElements = jsonData.wallElements;
-                wallInstances = jsonData.wallInstances;
-				otherData = jsonData.otherData;
+                model.spaces = jsonData.spaces;
+                model.wallElements = jsonData.wallElements;
+                model.wallInstances = jsonData.wallInstances;
+				model.otherData = jsonData.otherData;
 
                 // Set counters to one more than the highest ID found in the imported data
-                spaceIdCounter = Math.max(...spaces.map(space => space.id)) + 1;
-                wallElementsIdCounter = Math.max(...wallElements.map(element => element.id)) + 1;
-                wallInstanceID = Math.max(...wallInstances.map(instance => instance.id)) + 1;
+                model.spaceIdCounter = Math.max(...model.spaces.map(space => space.id)) + 1;
+                model.wallElementsIdCounter = Math.max(...model.wallElements.map(element => element.id)) + 1;
+                model.wallInstanceID = Math.max(...model.wallInstances.map(instance => instance.id)) + 1;
 
 				computeAll()
 				renderAll()
@@ -927,7 +965,7 @@ function handleHeatRecoveryCheckBox() {
 	
 	//update model
     var checkbox = document.getElementById('heatRecoveryCheckbox');
-	otherData['heatrecovery']['checked']=checkbox.checked
+	model.otherData['heatrecovery']['checked']=checkbox.checked
 
 	//rendering (needed since the display changes with the checkbox
 	//renderHeatRecovery()
@@ -939,7 +977,7 @@ function handleHeatRecoveryEfficiencyChange() {
 
 	// update model
     var efficiencyInput = document.getElementById('heatRecoveryEfficiency');
-	otherData['heatrecovery']['efficiency'] = efficiencyInput.value;
+	model.otherData['heatrecovery']['efficiency'] = efficiencyInput.value;
 
 	//heat recovery render not to adpat, but other items to be rendered later on
 	computeAll()
@@ -951,14 +989,11 @@ function handleHeatRecoveryEfficiencyChange() {
 function handleAirTightnessChange() {
 
 	//modify data
-	otherData['airtightness']['choice']=document.getElementById('airTightnessSelect').value
-	otherData['airtightness']['value'] = document.getElementById('at_value').value;
+	model.otherData['airtightness']['choice']=document.getElementById('airTightnessSelect').value
+	model.otherData['airtightness']['value'] = document.getElementById('at_value').value;
 
-	//update calculations
-	computeAllVentilationLosses()
-
-	// render
-	renderAirTightness()
+	computeAll()
+	renderAll()
 }
 
 

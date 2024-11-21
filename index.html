@@ -27,29 +27,12 @@
             box-sizing: border-box;
         }
     </style>
-	<script>
-		var spaces = [];
-		var spaceIdCounter = 0;
-		var wallElements = [];
-		var wallElementsIdCounter = 0;
-		var wallInstances = []; // Array to hold all wall instances
-		var wallInstanceID = 0; // Global counter to assign unique IDs
-		
-		var otherData = {'heatrecovery':
-							{'checked':false,'efficiency':0,'meanExtractTemperature':null,'supplyTemperature':null},
-						'airtightness':
-							{'choice':"v50",'value':0}
-						}
-		
-	</script>
 	<script src="datamodel.js"></script>
 	<script src="translations.js"></script>
 	<script src="functions.js"></script>
-	<script src="computeFunctions.js"></script>
 	<script src="solveLinearSystem.js"></script>
 	<link rel="stylesheet" href="style.css">
 	<script>
-		var model = new DataModel();
 	</script>
 
 </head>
@@ -177,23 +160,20 @@
 	</div>
 
 	<script>
-	
-	//initTabs()
-	renderTabs()
-	addOutsideBoundary()
-	toggleVisibility('spaces')
-	document.getElementById('tab-spaces').classList.add('active-tab')
-	initializeVentilationTable(); // Initialize the ventilation table at start
+	var model = new DataModel();
+	model.createNewBoundary('Ext',type='outside')
 
-	renderAirTightness()      
-	
-	handleHeatRecoveryCheckBox() 
-	renderResults()
+	//initTabs()
+	//renderTabs()
+
+	//initializeVentilationTable(); // Initialize the ventilation table at start
+
+	renderAll()
+	toggleVisibility('spaces')
 	
 	switchLanguage(getCurrentLanguage())
 
 	document.getElementById('exportDataBtn').addEventListener('click', exportData);
-
 	document.getElementById('importDataBtn').addEventListener('click', function() {
     document.getElementById('fileInput').click(); // Trigger the hidden file input click
 	

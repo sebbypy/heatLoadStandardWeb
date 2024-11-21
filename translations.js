@@ -38,7 +38,13 @@ var translations = {
 		"total_heat_loss":"Puissance totale",
 		"mean_extract_t":"Température moyenne de l'air extrait (°C)",
 		"supply_t":"Température après récupération de chaleur (°C)",
-		"null_extract_flow":"Débit d'extraction total nul, pas de calcul possible"
+		"null_extract_flow":"Débit d'extraction total nul, pas de calcul possible",
+		"total":"Total",
+		"equilibrium":"Pas chauffé directement",
+		"wall":"Paroi",
+		"neighbour_space":"Espace voisin",
+		"wall_area":"Surface (m²)",
+		"actions":""
 
     },
 	'nl': {
@@ -80,7 +86,13 @@ var translations = {
 		"total_heat_loss":"Totaal vermogen",
 		"mean_extract_t":"Afgezogen lucht gemmidelde temperatuur (°C)",
 		"supply_t":"Toevoer luchttemperatuur (°C)",
-		"null_extract_flow":"Nul totaal afvoerdebiet, geen berekening mogelijk"
+		"null_extract_flow":"Nul totaal afvoerdebiet, geen berekening mogelijk",
+		"total":"Totaal",
+		"equilibrium":"Niet direct verwarmd",
+		"wall":"Wand",
+		"neighbour_space":"Buurruimte",
+		"wall_area":"Oppervlakte (m²)",
+		"actions":""
 
 
     },

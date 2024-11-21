@@ -68,4 +68,7 @@ margin:0px;
     top: 10px;
 }
 
-
+.total-row{
+	font-weight: bold;
+	background-color: #ccc;
+}
