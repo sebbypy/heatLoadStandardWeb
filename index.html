@@ -3,34 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Calcul des déperditions thermiques</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .space-section {
-            margin-top: 20px;
-            border-top: 2px solid #ccc;
-            padding-top: 10px;
-        }
-        input[type="text"], input[type="number"], select {
-            box-sizing: border-box;
-        }
-    </style>
+	
 	<script src="datamodel.js"></script>
 	<script src="translations.js"></script>
 	<script src="functions.js"></script>
 	<script src="solveLinearSystem.js"></script>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 	<link rel="stylesheet" href="style.css">
 	<script>
 	</script>
@@ -72,7 +50,7 @@
 
 	<div id="boundaryconditions" class="main-section" >
     <h2 lang-key="boundaryconditions">Environnements extérieurs et voisins</h2>
-    <button onclick="handleAddBoundary()" lang-key="add_bc">Ajouter un environnement</button>
+    <button onclick="handleAddBoundary()">+</button>
     <table id="tableBCS">
         <tr>
             <th lang-key="bc_name">Nom de l'espace ou de l'environnement</th>
@@ -85,7 +63,7 @@
 
 	<div id="spaces" class="main-section" >
     <h2 lang-key="spaces">Espaces</h2>
-    <button onclick="handleAddSpace()" lang-key="add_space">Ajouter un espace</button>
+    <button onclick="handleAddSpace()">+</button>
     <table id="tableSpaces">
         <tr>
             <th lang-key="space_name">Nom de l'espace</th>
@@ -100,7 +78,7 @@
 
 	<div id="wall_elements" class="main-section" >
     <h2 lang-key="walls" >Murs</h2>
-    <button onclick="handleAddWallElement()" lang-key="add_wall" >Ajouter un wall</button>
+    <button onclick="handleAddWallElement()">+</button>
     <table id="tableMurs">
         <tr>
             <th lang-key="wall_name" >Nom du wall</th>

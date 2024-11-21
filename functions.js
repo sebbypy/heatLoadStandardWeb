@@ -198,20 +198,20 @@ function handleDeleteSpace(spaceId) {
         renderSpacesTable();  
 		renderBoundariesTable();
 		renderWallInstances();
-		renderRerenderResults()
+		renderResults()
     }
 }
 
 
 function handleDeleteWallElement(wallElementId) {
     // Check if the wall element is referenced in any wall instances
-    const isReferenced = wallInstances.some(wall => wall.elementId === wallElementId);
+    const isReferenced = model.wallInstances.some(wall => wall.elementId === wallElementId);
 
     if (isReferenced) {
         alert("Cannot delete this wall element because it is referenced in wall instances.");
     } else {
         // Proceed with deletion: Remove the wall element from the array
-        wallElements = wallElements.filter(wElement => wElement.id !== wallElementId);
+        model.wallElements = model.wallElements.filter(wElement => wElement.id !== wallElementId);
         renderWallElements();  // Re-render the wall elements table to reflect deletion
 
         // Optional: Update other components that might be affected
@@ -273,8 +273,14 @@ function renderSpaceRow(table, space) {
     row.insertCell(4).innerHTML = `<select name="typeChauffage${space.id}" onchange="handleSpacePropertyChange(${space.id}, 'heating_type', this.value)">` +
         heatingOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('') +
         `</select>`;
-    row.insertCell(5).innerHTML = `<button onclick="handleDeleteSpace(${space.id})">Delete</button>`;
-	
+    //row.insertCell(5).innerHTML = `<button onclick="handleDeleteSpace(${space.id})">Delete</button>`;
+
+    const cell = row.insertCell(5)
+    const button = document.createElement('button');
+    button.innerHTML = '<i class="material-icons">delete</i>'
+	button.onclick = () => handleDeleteSpace(space.id);
+	cell.appendChild(button)
+
 	var dropdown = document.getElementsByName('typeChauffage'+space.id)[0];
     dropdown.value = space.heating_type; 
 
@@ -321,8 +327,13 @@ function renderBoundaryRow(table, space, index) {
 		row.insertCell(3).innerHTML = ``;	
 	}
 	else{
+		const cell = row.insertCell(3)
+		const button = document.createElement('button');
+		button.innerHTML = '<i class="material-icons">delete</i>'
+		button.onclick = () => handleDeleteSpace(space.id);
+		cell.appendChild(button)
 
-		row.insertCell(3).innerHTML = `<button onclick="handleDeleteSpace(${space.id})">Delete</button>`;
+
 	}
 }
 
@@ -414,7 +425,16 @@ function renderWallElementRow(table, wElement) {
     row.insertCell(0).innerHTML = `<input type="text" name="nameMur${wElement.id}" value="${wElement.name}" onchange="handleWallNameChange(${wElement.id}, this.value)">`;
     row.insertCell(1).innerHTML = `<input type="number" name="valeurU${wElement.id}" value="${wElement.uValue}" onchange="handleWalUValueChange(${wElement.id}, this.value)">`;
     row.insertCell(2).innerHTML = `<input type="number" name="pontThermique${wElement.id}" value="${wElement.thermalBridge}" onchange="handleWallThermalBridgeChange(${wElement.id}, this.value)">`;
-    row.insertCell(3).innerHTML = `<button onclick="handleDeleteWallElement(${wElement.id})">Delete</button>`;
+
+
+    //row.insertCell(3).innerHTML = `<button onclick="handleDeleteWallElement(${wElement.id})">Delete</button>`;
+	const cell = row.insertCell(3)
+    const button = document.createElement('button');
+    button.innerHTML = '<i class="material-icons">delete</i>'
+	button.onclick = () => handleDeleteWallElement(wElement.id);
+	cell.appendChild(button)
+
+
 }
 
 function renderTabs(){
@@ -495,8 +515,9 @@ function renderWallInstances() {
 		spaceDiv.appendChild(header);
  
 		const addButton = document.createElement('button');
-		addButton.setAttribute('lang-key', 'add_wall');
-		addButton.textContent = translations[getCurrentLanguage()]['add_wall'];
+		//addButton.setAttribute('lang-key', 'add_wall');
+		//addButton.textContent = translations[getCurrentLanguage()]['add_wall'];
+		addButton.textContent = "+";
 		addButton.onclick = () => handleAddWallInstance(index);
 		spaceDiv.appendChild(addButton);
 
@@ -586,7 +607,9 @@ function renderWallInstances() {
 					// Delete Button
 					const actionsCell = document.createElement('td');
 					const deleteButton = document.createElement('button');
-					deleteButton.textContent = 'Supprimer';
+					deleteButton.innerHTML = '<i class="material-icons">delete</i>'
+
+
 					deleteButton.onclick = () => handleDeleteWallInstance(wall.id, index);
 					actionsCell.appendChild(deleteButton);
 					row.appendChild(actionsCell);

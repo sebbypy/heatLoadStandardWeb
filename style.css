@@ -1,12 +1,38 @@
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input[type="text"], input[type="number"], select {
+            box-sizing: border-box;
+        }
+
+
 
 button, input[type=submit], select, input[type=number], input[type=text]{
   padding: 5px 5px;
-  margin: 1px 1px;
+  margin: 3px 3px;
   cursor: pointer;
   background-color: #fff	;
   font-size:16px;
   border-radius: 4px;
 }
+
+input[type=number]{
+	width:60px;
+  text-align: center;
+
+}
+
 
 
 .active-tab {
@@ -32,7 +58,7 @@ body{
 font-family: neue-haas-unica,sans-serif;
 color: #495057;
 font-size: 16px;
-background-color: #eee;
+background-color: #fffbfb; /*alternative #eee for light grey */
 margin:0px;	
 }
 
@@ -70,5 +96,19 @@ margin:0px;
 
 .total-row{
 	font-weight: bold;
-	background-color: #ccc;
+	background-color: #f2f2f2;
+}
+
+
+table tbody tr:nth-child(even) {
+    background-color: #f9f9f9; /* Alternating row color */
+}
+
+table tbody tr:hover {
+    background-color: #f1f1f1; /* Highlight row on hover */
+}
+
+table th {
+    padding: 12px 15px; /* Adds consistent spacing */
+    border-bottom: 2px solid #ddd; /* Divider for clarity */
 }
