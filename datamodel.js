@@ -19,6 +19,7 @@ class DataModel {
                 'value': 0
             }
         };
+		this.zipCode = 1000
 
     }
     createNewSpace(name) {
@@ -30,6 +31,7 @@ class DataModel {
             floorarea: 0,
             volume: 0,
             heating_type: "radiators",
+			bc_type: null,
             transmission_heat_loss: 0,
             ventilation: {
                 "natural_supply_flowrate": 0,
@@ -46,12 +48,24 @@ class DataModel {
 
     }
 
-    createNewBoundary(name, type = 'unheated') {
+	setZip(zip){
+		this.zipCode = zip
+		
+	}
+
+	getBoundaryTemperatures(){
+		return getWeather("temperature",this.zipCode)
+	}
+	
+
+    createNewBoundary(name, type = 'unheated',bc_type='outside') {
+		console.log("create boundary")
         const newBoundary = {
             type: type,
             name: name,
             id: this.spaceIdCounter,
-            temperature: -7
+            temperature: -7,
+			bc_type: bc_type
         };
         this.spaceIdCounter++;
         this.spaces.push(newBoundary);
@@ -128,10 +142,6 @@ class DataModel {
             var infiltrationFlowRate = Q50 * LIR * volumeRatio + spaceExtractSurplus
             var infiltrationLoss = 0.34 * infiltrationFlowRate * (space.temperature - Tout)
 
-            console.log(Q50)
-            console.log(volumeRatio)
-            console.log(infiltrationFlowRate)
-            console.log(Q50 * LIR * volumeRatio)
 
             var minimalFlowRate = 0.5 * space.volume
             var totalFlowRateWithoutMinimum = space.ventilation.natural_supply_flowrate + space.ventilation.transfer_flowrate + space.ventilation.mechanical_supply_flowrate + infiltrationFlowRate
@@ -162,6 +172,46 @@ class DataModel {
         return this.otherData.airtightness.value * this.getTotalVolume()
 
     }
+	
+	getBoundaryConditionTypes(){
+		return [
+		{ value: "outside", label: "" },
+		{ value: "ground", label: "" },
+		{ value: "other_heated", label: "" },
+		{ value: "other_unheated", label: "" } ];	
+	}
+	
+	setDefaultBoundaryTemperatures() {
+	    console.log("set default bcs")
+	    const default_temps = this.getBoundaryTemperatures()
+		
+		this.spaces.forEach(space => {
+			console.log(space)
+			if (space.type == 'unheated') {
+				switch (space.bc_type) {
+				case 'outside':
+					space.temperature = default_temps[0]
+					break;
+				case 'other_unheated':
+					space.temperature = default_temps[1]
+					break;
+				case 'other_heated':
+					space.temperature = default_temps[2]
+					break;
+				case 'ground':
+					console.log("this is a ground")
+					space.temperature = default_temps[2]
+					break;
+				default:
+					space.temperature = default_temps[0]
+
+				}
+			}
+			console.log(space)
+		});
+
+	}
+
 
     getTout() {
         return this.getSpace(0).temperature
@@ -226,12 +276,16 @@ class DataModel {
         if (this.otherData.heatrecovery.checked && this.otherData.heatrecovery.meanExtractTemperature != null) {
 
             var eta = this.otherData.heatrecovery.efficiency / 100.
+			console.log(eta,typeof(eta))
+			console.log(this.otherData.heatrecovery.meanExtractTemperature,typeof(this.otherData.heatrecovery.meanExtractTemperature))
+			console.log(this.getTout(),typeof(this.getTout()))
 			this.otherData.heatrecovery.supplyTemperature = this.getTout() + eta * (this.otherData.heatrecovery.meanExtractTemperature - this.getTout())
         } 
 		else {
             this.otherData.heatrecovery.supplyTemperature = this.getTout()
         }
-
+		console.log("Supply T",this.otherData.heatrecovery.supplyTemperature)
+		console.log(typeof(this.otherData.heatrecovery.supplyTemperature))
     }
 
     getTotalVolume() {

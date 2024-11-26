@@ -6,6 +6,7 @@
 	
 	<script src="datamodel.js"></script>
 	<script src="translations.js"></script>
+	<script src="weather.js"></script>
 	<script src="functions.js"></script>
 	<script src="solveLinearSystem.js"></script>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -31,132 +32,21 @@
 
 
 <body>
-	<div class="container">
 
-
-    <h1 lang-key='heat_loss_calculation'>Calcul des déperditions thermiques</h1>
-	<div class="data-buttons">
-        <button id="exportDataBtn">Export Data</button>
-        <button id="importDataBtn">Import Data</button>
-        <input type="file" id="fileInput" style="display: none;" onchange="importData(this)" accept=".json">
-    </div>
-	
-	<div id="tabcontainer">
-	<div id="maintabs"></div>
-	<div id="spacetabs"></div>
-	<div id="resultstabs"></div>
-	</div>
-
-
-	<div id="boundaryconditions" class="main-section" >
-    <h2 lang-key="boundaryconditions">Environnements extérieurs et voisins</h2>
-    <button onclick="handleAddBoundary()">+</button>
-    <table id="tableBCS">
-        <tr>
-            <th lang-key="bc_name">Nom de l'espace ou de l'environnement</th>
-            <th lang-key="bc_type">Type d'espace/d'environnement</th>
-            <th lang-key="bc_temperature">Température</th>
-        </tr>
-    </table>
-	</div>
-
-
-	<div id="spaces" class="main-section" >
-    <h2 lang-key="spaces">Espaces</h2>
-    <button onclick="handleAddSpace()">+</button>
-    <table id="tableSpaces">
-        <tr>
-            <th lang-key="space_name">Nom de l'espace</th>
-            <th lang-key="space_temperature">Température (°C)</th>
-            <th lang-key="floor_area">Surface au sol (m²)</th>
-            <th lang-key="inner_volume">Volume intérieur (m³)</th>
-            <th lang-key="heating_type">Type de chauffage</th>
-            <th lang-key="actions">Action</th>
-        </tr>
-    </table>
-	</div>
-
-	<div id="wall_elements" class="main-section" >
-    <h2 lang-key="walls" >Murs</h2>
-    <button onclick="handleAddWallElement()">+</button>
-    <table id="tableMurs">
-        <tr>
-            <th lang-key="wall_name" >Nom du wall</th>
-            <th lang-key="u_value">Valeur U</th>
-            <th lang-key="thermal_bridge_coefficient">Coefficient de pont thermique</th>
-            <th lang-key="actions">Action</th>
-        </tr>
-    </table>
-	</div>
-	
-	<div id="ventilation" class="main-section">
-	<h2 lang-key="air_tightness" >Etanchéité à l'air</h2>
-	<select id="airTightnessSelect" onchange="handleAirTightnessChange()"> 
-		<option value="v50" selected>v50</option>
-		<option value="n50">n50</option>
-		<option value="Q50">Q50</option>
-	</select>
-	<input type="number" id="at_value"  min="1" max="100" onchange="handleAirTightnessChange()"/>
-	<span id="at_unit">at_unit</span>
-	
-	
-	 <!-- Heat Recovery Checkbox and Efficiency Input -->
-    <div>
-	<h2 lang-key="heat_recovery" >Récupération de chaleur</h2>
-	    
-    <span lang-key="enable_hr"> Enable Heat Recovery </span>
-	<input type="checkbox" id="heatRecoveryCheckbox" onchange="handleHeatRecoveryCheckBox()"> 
-    <input type="number" id="heatRecoveryEfficiency" min="0" max="100" style="display: none;" placeholder="Rendement" onchange="handleHeatRecoveryEfficiencyChange()"/>
-	<span id="hr_unit" style="display: none;">%</span>
-
-	<p></p>
-    <span lang-key="mean_extract_t" id="meanExtractTemperature_label" style="display: none;"></span>
-    <input type="text" id="meanExtractTemperature_value" style="display: none;" disabled="true"/>
-	<p></p>
-    <span lang-key="supply_t" id="supplyTemperature_label" style="display: none;"></span>
-    <input type="text" id="supplyTemperature_value" min="0" max="100" style="display: none;"  disabled="true" />
-
-    </div>
-	
-	
-	<h2 lang-key="ventilation" >Ventilation</h2>
-
-	</div>
-
-	
-
-    <div id="spacesContainer">
-        <!-- Espaces and their specific wall relationships will be displayed here -->
-    </div>
-
-	<div id="resultsContainer" class="main-section">
-	
-		<!-- Summary of results as a table of heat losses by space-->
-	</div>
-
-
+	<div id="main_container" class="container">
 	</div>
 
 	<script>
+
 	var model = new DataModel();
-	model.createNewBoundary('Ext',type='outside')
-
-	//initTabs()
-	//renderTabs()
-
-	//initializeVentilationTable(); // Initialize the ventilation table at start
+	//model.createNewBoundary('Ext',bc_type='outside')
+	initializePage("main_container")
+	addOutsideBoundary()
 
 	renderAll()
 	toggleVisibility('spaces')
 	
 	switchLanguage(getCurrentLanguage())
-
-	document.getElementById('exportDataBtn').addEventListener('click', exportData);
-	document.getElementById('importDataBtn').addEventListener('click', function() {
-    document.getElementById('fileInput').click(); // Trigger the hidden file input click
-	
-	
-});
 
 	
 	</script>

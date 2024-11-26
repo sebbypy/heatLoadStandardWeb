@@ -36,15 +36,26 @@ var translations = {
 		"heatup_loss":"Surpuissance de relance",
 		"outside":"Extérieur",
 		"total_heat_loss":"Puissance totale",
-		"mean_extract_t":"Température moyenne de l'air extrait (°C)",
-		"supply_t":"Température après récupération de chaleur (°C)",
+		"mean_extract_t":"Température moyenne de l'air extrait: ",
+		"supply_t":"Température après récupération de chaleur: ",
 		"null_extract_flow":"Débit d'extraction total nul, pas de calcul possible",
 		"total":"Total",
 		"equilibrium":"Pas chauffé directement",
 		"wall":"Paroi",
 		"neighbour_space":"Espace voisin",
 		"wall_area":"Surface (m²)",
-		"actions":""
+		"actions":"",
+		"per_m2":"[W/m²]",
+		"select_municipality": "Localité",
+		"base_external_temperature":"Température extérieure de base :",
+		"month_external_temperature":"Température moyenne du mois le plus froid :",
+		"year_external_temperature":"Température moyenne saison de chauffe :",
+		"outside":"Extérieur",
+		"ground":"Sol",
+		"other_heated":"Mitoyen chauffé",
+		"other_unheated":"Espace ou mitoyen non chauffé",
+		"apply_default_temperatures":"Appliquer les températures par défaut"
+
 
     },
 	'nl': {
@@ -84,17 +95,25 @@ var translations = {
 		"heatup_loss":"Opwarmvermogen",
 		"outside":"Buiten",
 		"total_heat_loss":"Totaal vermogen",
-		"mean_extract_t":"Afgezogen lucht gemmidelde temperatuur (°C)",
-		"supply_t":"Toevoer luchttemperatuur (°C)",
+		"mean_extract_t":"Afgezogen lucht gemmidelde temperatuur: ",
+		"supply_t":"Toevoer luchttemperatuur: ",
 		"null_extract_flow":"Nul totaal afvoerdebiet, geen berekening mogelijk",
 		"total":"Totaal",
 		"equilibrium":"Niet direct verwarmd",
 		"wall":"Wand",
 		"neighbour_space":"Buurruimte",
 		"wall_area":"Oppervlakte (m²)",
-		"actions":""
-
-
+		"actions":"",
+		"per_m2":"[W/m²]",
+		"select_municipality": "Localité",
+		"base_external_temperature":"Buitentemperatuur :",
+		"month_external_temperature":"Koudste maand gemmidelde temperatuur :",
+		"year_external_temperature":"Stookseizeon gemmidelde temperatuur :",
+		"outside":"Buiten",
+		"ground":"Grond",
+		"other_heated":"Verwarmde buurgebouw",
+		"other_unheated":"Onverwarmde buurgebouw of ruimte",
+		"apply_default_temperatures":"Default waarden toepassen"
     },
 
     // Add additional languages here

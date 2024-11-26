@@ -37,7 +37,7 @@ function handleAddBoundary() {
 
 function addOutsideBoundary() {
 	
-	model.createNewBoundary('outside')
+	model.createNewBoundary('Ext',type='unheated',bc_type='outside')
 	renderAll()
 }
 
@@ -45,9 +45,10 @@ function addOutsideBoundary() {
 function handleSpacePropertyChange(spaceId, property, value) {
     const space = model.spaces.find(space => space.id === spaceId);
     if (space) {
-        space[property] = value;
+        space[property] = isNaN(Number(value)) ? value : Number(value);
 		computeAll()
 		renderAll()
+		console.log(space)
 	}
 }
 
@@ -118,14 +119,11 @@ function handleVentilationChange(spaceId, parameter, value){
 }
 
 function handleWallInstanceAreaChange(wallId, newArea,callerspaceid) {
-	console.log("area change",callerspaceid)
     const wallInstance = model.wallInstances.find(m => m.id === wallId);
     if (wallInstance) {
         wallInstance.Area = Number(newArea);
 	}
-	console.log("wallinstance",wallInstance)
 	computeAll()
-	console.log("wallinstance2",wallInstance)
 	renderAll()
 	toggleVisibility(`space-${callerspaceid}`)
 }
@@ -219,6 +217,15 @@ function handleDeleteWallElement(wallElementId) {
     }
 }
 
+function handleSetDefaultBoundaryTemperatures(){
+	console.log("handle default bcs")
+	model.setDefaultBoundaryTemperatures()
+	computeAll()
+	renderAll()
+
+	
+}
+
 
 // ----------------------
 // Compute full case
@@ -302,28 +309,38 @@ function renderEquilibrium(space){
 
 function renderBoundaryRow(table, space, index) {
     const row = table.insertRow(-1);  // Append row at the end of the table
-    const bctype = [
-        //{ value: "outside", label: "Extérieur" },
-        { value: "ground", label: "Sol" },
-        { value: "other", label: "Autre" }
-    ];
+    const bctype = model.getBoundaryConditionTypes()
 
     // Create cells with input/select elements and set their contents
     row.insertCell(0).innerHTML = `<input type="text" name="nameSpace${space.id}" value="${space.name}" onchange="handleSpaceNameChange(${space.id}, this.value)">`;
 
-	if (space.type == 'outside'){
-		row.insertCell(1).innerHTML = translations[getCurrentLanguage()]['outside'];
+	if (index == 0){
+		let cell = row.insertCell(1)
+		cell.setAttribute('lang-key', 'outside');
+		cell.innerHTML = translations[getCurrentLanguage()]['outside'];
 	}
 	else{
-		row.insertCell(1).innerHTML = `<select name="bcType${space.id}" onchange="handleSpacePropertyChange(${space.id}, 'type', this.value)">` +
-			bctype.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('') +
-			`</select>`;
+		let cell = row.insertCell(1);
+		let select = document.createElement('select');
+		select.name = `bcType${space.id}`;
+		select.onchange = function () {
+			handleSpacePropertyChange(space.id, 'bc_type', this.value);
+		};
+		bctype.forEach(opt => {
+			let option = document.createElement('option');
+			option.value = opt.value;
+			option.textContent = translations[getCurrentLanguage()][opt.value];
+			select.appendChild(option);
+		});
+		select.value = space.bc_type;
+		cell.appendChild(select);
+		
 	}
-
+  
+  
     row.insertCell(2).innerHTML = `<input type="number" name="tempRef${space.id}" value="${space.temperature}" onchange="handleSpacePropertyChange(${space.id}, 'temperature', this.value)">`;
 
-	if (space.type == 'outside'){
-	
+	if (space.id==0){
 		row.insertCell(3).innerHTML = ``;	
 	}
 	else{
@@ -341,7 +358,7 @@ function renderBoundaryRow(table, space, index) {
 
 function renderResults(){
     // Define the headers of the table
-    const headers_keys = ["spaces", "transmission_heat_loss", "ventilation_heat_loss", "heatup_loss","total_heat_loss"];
+    const headers_keys = ["spaces", "transmission_heat_loss", "ventilation_heat_loss", "heatup_loss","total_heat_loss","per_m2"];
     
     // Get the 'results' div
     const resultsDiv = document.getElementById("resultsContainer");
@@ -365,7 +382,7 @@ function renderResults(){
     });
     table.appendChild(headerRow);
 
-	let totals = [0, 0, 0, 0]; // For transmission_heat_loss, ventilation_heat_loss, heatup_loss, total_heat_loss
+	let totals = [0, 0, 0, 0,0]; // For transmission_heat_loss, ventilation_heat_loss, heatup_loss, total_heat_loss
 
 
     // Create the table rows based on the provided data
@@ -385,7 +402,9 @@ function renderResults(){
                 space.transmission_heat_loss,
                 space.ventilation.ventilation_loss,
                 0, // Assuming heatup_loss is 0 for now
-                space.transmission_heat_loss + space.ventilation.ventilation_loss
+                space.transmission_heat_loss + space.ventilation.ventilation_loss,
+				(space.transmission_heat_loss + space.ventilation.ventilation_loss)/space.floorarea
+				
             ];
 
             // Append cells and update totals
@@ -496,11 +515,9 @@ function renderWallInstances() {
     var container = document.getElementById('spacesContainer');
     container.innerHTML = ''; // Clear existing tables
 
-	console.log("render wall instance")
 
     model.spaces.forEach((space, index) => {
 
-		console.log("space",space.name,index,space.id)
 
 		var spaceTotalLoss = 0;
 		var spaceTotalSurface = 0;
@@ -518,6 +535,7 @@ function renderWallInstances() {
 		//addButton.setAttribute('lang-key', 'add_wall');
 		//addButton.textContent = translations[getCurrentLanguage()]['add_wall'];
 		addButton.textContent = "+";
+		addButton.classList.add("add-button")
 		addButton.onclick = () => handleAddWallInstance(index);
 		spaceDiv.appendChild(addButton);
 
@@ -527,7 +545,7 @@ function renderWallInstances() {
 
 		// Add table header
 		const headerRow = document.createElement('tr');
-		['wall', 'neighbour_space', 'wall_area', 'transmission_heat_loss', 'actions'].forEach(key => {
+		['wall', 'neighbour_space', 'wall_area', 'transmission_heat_loss', ''].forEach(key => {
 			const th = document.createElement('th');
 			th.setAttribute('lang-key', key);
 			th.textContent = translations[getCurrentLanguage()][key] || key;
@@ -559,8 +577,7 @@ function renderWallInstances() {
 						const option = document.createElement('option');
 						option.value = wElement.id;
 						option.textContent = wElement.name;
-						console.log("IDS",wElement.id,wall.elementId)
-						if (wElement.id === wall.elementId) {console.log("in if");option.selected = true;}
+						if (wElement.id === wall.elementId) {option.selected = true;}
 						wallElementSelect.appendChild(option);
 					});
 					wallElementCell.appendChild(wallElementSelect);
@@ -596,12 +613,12 @@ function renderWallInstances() {
 
 					// Transmission Loss Input
 					const lossCell = document.createElement('td');
-					const lossInput = document.createElement('input');
-					lossInput.type = 'text';
-					lossInput.name = `lossWallInstance${wall.id}`;
-					lossInput.value = (wall.transmissionLoss * multiplier).toFixed(0);
-					lossInput.disabled = true;
-					lossCell.appendChild(lossInput);
+					//const lossInput = document.createElement('p');
+					//lossInput.type = 'text';
+					lossCell.name = `lossWallInstance${wall.id}`;
+					lossCell.innerHTML = (wall.transmissionLoss * multiplier).toFixed(0);
+					//lossInput.disabled = true;
+					//lossCell.appendChild(lossInput);
 					row.appendChild(lossCell);
 
 					// Delete Button
@@ -621,8 +638,9 @@ function renderWallInstances() {
 		
 		 // Add total row
 		const totalRow = document.createElement('tr');
+		totalRow.classList.add('total-row');
 
-		['TOTAL', '', spaceTotalSurface.toFixed(1), spaceTotalLoss.toFixed(0), ''].forEach((text, i) => {
+		['Total', '', spaceTotalSurface.toFixed(1), spaceTotalLoss.toFixed(0), ''].forEach((text, i) => {
 			const cell = document.createElement(i === 2 || i === 3 ? 'td' : 'td');
 			cell.textContent = text;
 			totalRow.appendChild(cell);
@@ -716,10 +734,11 @@ function renderVentilationTable() {
 			});
 
 			var cell = document.createElement('td');
-			var input = document.createElement('input');
-			input.type = 'text';
-			input.value = space.ventilation.ventilation_loss.toFixed(0);
-			input.disabled = true; // Make the input read-only
+			var input = document.createElement('span');
+			//input.type = 'text';
+			//input.value = space.ventilation.ventilation_loss.toFixed(0);
+			//input.disabled = true; // Make the input read-only
+			input.innerHTML = space.ventilation.ventilation_loss.toFixed(0)
 			input.name = "ventilationLoss"+space.id
 			cell.appendChild(input);
 			row.appendChild(cell);
@@ -732,11 +751,10 @@ function renderVentilationTable() {
 	
 	// Add total row
     var totalRow = document.createElement('tr');
-	totalRow.classList.add('total-row')
+	totalRow.classList.add('total-row');
     totalRow.innerHTML = '<td lang-key="total">' + translations[getCurrentLanguage()]["total"] + '</td>';
     Object.keys(totals).forEach(key => {
         var totalCell = document.createElement('td');
-		console.log("totals",totals[key])
 		if (totals[key] != null) {
 			totalCell.textContent = totals[key].toFixed(0); // Display totals rounded to integers
 		}
@@ -773,6 +791,19 @@ function renderSpacesTable() {
 }
 
 function renderBoundariesTable() {
+	
+	// Render temperatures
+	const zipcode_select = document.getElementById("municipality_select")
+	console.log(model.getBoundaryTemperatures())
+	console.log(document.getElementById("external_temperature"))
+	
+	document.getElementById("external_temperature").innerHTML = model.getBoundaryTemperatures()[0]+'°C'
+	document.getElementById("month_external_temperature").innerHTML = model.getBoundaryTemperatures()[1]+'°C'
+	document.getElementById("year_external_temperature").innerHTML = model.getBoundaryTemperatures()[2]+'°C'
+	
+	
+	//Render table
+	
     const table = document.getElementById('tableBCS');
     // Clear existing table rows except for the header
     while (table.rows.length > 1) {
@@ -816,11 +847,13 @@ function renderHeatRecovery(){
 
 	
 	document.getElementById('meanExtractTemperature_value').style.display = checkbox.checked ? 'inline':'none'
-	document.getElementById('meanExtractTemperature_value').value = model.otherData.heatrecovery.meanExtractTemperature !== null ? model.otherData.heatrecovery.meanExtractTemperature.toFixed(0) : translations[getCurrentLanguage()]["null_extract_flow"];
+	document.getElementById('meanExtractTemperature_value').innerHTML = model.otherData.heatrecovery.meanExtractTemperature !== null ? model.otherData.heatrecovery.meanExtractTemperature.toFixed(0)+"°C" : NaN;
+
+	document.getElementById('meanExtractTemperature_warning').style.display = (checkbox.checked && model.otherData.heatrecovery.meanExtractTemperature == null ) ? 'inline':'none' 
+	
 
 	document.getElementById('supplyTemperature_value').style.display = checkbox.checked ? 'inline':'none'
-	document.getElementById('supplyTemperature_value').value = model.otherData.heatrecovery.supplyTemperature.toFixed(0)
-
+	document.getElementById('supplyTemperature_value').innerHTML = model.otherData.heatrecovery.supplyTemperature.toFixed(0)+"°C"
 	document.getElementById('meanExtractTemperature_label').style.display = checkbox.checked ? 'inline':'none'
 	document.getElementById('supplyTemperature_label').style.display = checkbox.checked ? 'inline':'none'
 	
@@ -983,6 +1016,14 @@ function importData() {
 }
 
 
+function handleMunicipalityChange(){
+	const select_zip = document.getElementById("municipality_select")
+	model.setZip(select_zip.value)
+	console.log(model.zipCode)
+	console.log(model.getBoundaryTemperatures())
+	renderBoundariesTable()
+	
+}
 
 function handleHeatRecoveryCheckBox() {
 	
@@ -1021,6 +1062,169 @@ function handleAirTightnessChange() {
 
 
 
+// INIT FUNCTIONS 
+
+
+function createElement(tag, attributes = {}, innerText = '', children = []) {
+    const element = document.createElement(tag);
+
+    // Loop through attributes
+    for (const [key, value] of Object.entries(attributes)) {
+        if (key === 'class') {
+            // Handle class attribute
+            element.className = value;
+        } else if (key.startsWith('on')) {
+            // Assign event handlers
+            element[key] = value;
+        } else {
+            // Assign other attributes
+            element.setAttribute(key, value);
+        }
+    }
+
+    // Set innerText if provided
+    if (innerText) {
+        element.innerText = innerText;
+    }
+
+    // Append children if any
+    children.forEach(child => element.appendChild(child));
+
+    return element;
+}
+
+
+
+function initializePage(container_id) {
+    // Header
+    const header = createElement('h1', { 'lang-key': 'heat_loss_calculation' }, 'Calcul des déperditions thermiques');
+
+    // Data Buttons Section
+    const dataButtons = createElement('div', { class: 'data-buttons' }, '', [
+        createElement('button', { id: 'exportDataBtn' }, 'Export Data'),
+        createElement('button', { id: 'importDataBtn' }, 'Import Data'),
+        createElement('input', { id: 'fileInput', type: 'file', style: 'display: none;', onchange: () => importData(this), accept: '.json' })
+    ]);
+	
+
+    // Tabs Container
+    const tabsContainer = createElement('div', { id: 'tabcontainer' }, '', [
+        createElement('div', { id: 'maintabs' }),
+        createElement('div', { id: 'spacetabs' }),
+        createElement('div', { id: 'resultstabs' })
+    ]);
+
+    // Boundary Conditions Section
+    const boundaryConditions = createElement('div', { id: 'boundaryconditions', class: 'main-section' }, '', [
+        createElement('h2', { 'lang-key': 'boundaryconditions' }, 'Environnements extérieurs et voisins'),
+		createElement('h3',{'lang-key':'select_municipality'},''),
+		createElement('select',{'id':'municipality_select','autocomplete': 'on',onchange: () => handleMunicipalityChange()},'',getWeather('zipcodes').map(value => createElement('option', { value }, value))),
+		createElement('p',{},'',[
+			createElement('span',{'lang-key':'base_external_temperature'},''),
+			createElement('span',{id:'external_temperature'},'-7 °C')
+			]),
+		createElement('p',{},'',[
+			createElement('span',{'lang-key':'month_external_temperature'},''),
+			createElement('span',{id:'month_external_temperature'},'-7 °C')
+			]),
+		createElement('p',{},'',[
+			createElement('span',{'lang-key':'year_external_temperature'},''),
+			createElement('span',{id:'year_external_temperature'},'-7 °C')
+			]),
+		createElement('button',{onclick: handleSetDefaultBoundaryTemperatures,'lang-key':'apply_default_temperatures'},''),
+		createElement('p',{},''),
+        createElement('button', { onclick: handleAddBoundary , class:'add-button'}, '+'),
+        createElement('table', { id: 'tableBCS' }, '', [
+            createElement('tr', {}, '', [
+                createElement('th', { 'lang-key': 'bc_name' }, 'Nom de l’espace ou de l’environnement'),
+                createElement('th', { 'lang-key': 'bc_type' }, 'Type d’espace/d’environnement'),
+                createElement('th', { 'lang-key': 'bc_temperature' }, 'Température'),
+                createElement('th', {}, '')
+            ])
+        ])
+    ]);
+
+    // Spaces Section
+    const spaces = createElement('div', { id: 'spaces', class: 'main-section' }, '', [
+        createElement('h2', { 'lang-key': 'spaces' }, 'Espaces'),
+        createElement('button', { onclick: handleAddSpace ,class:'add-button'}, '+'),
+        createElement('table', { id: 'tableSpaces' }, '', [
+            createElement('tr', {}, '', [
+                createElement('th', { 'lang-key': 'space_name' }, 'Nom de l’espace'),
+                createElement('th', { 'lang-key': 'space_temperature' }, 'Température (°C)'),
+                createElement('th', { 'lang-key': 'floor_area' }, 'Surface au sol (m²)'),
+                createElement('th', { 'lang-key': 'inner_volume' }, 'Volume intérieur (m³)'),
+                createElement('th', { 'lang-key': 'heating_type' }, 'Type de chauffage'),
+                createElement('th', { }, '' )
+            ])
+        ])
+    ]);
+
+    // Walls Section
+    const walls = createElement('div', { id: 'wall_elements', class: 'main-section' }, '', [
+        createElement('h2', { 'lang-key': 'walls' }, 'Murs'),
+        createElement('button', { onclick: handleAddWallElement, class:'add-button' }, '+'),
+        createElement('table', { id: 'tableMurs' }, '', [
+            createElement('tr', {}, '', [
+                createElement('th', { 'lang-key': 'wall_name' }, 'Nom du wall'),
+                createElement('th', { 'lang-key': 'u_value' }, 'Valeur U'),
+                createElement('th', { 'lang-key': 'thermal_bridge_coefficient' }, 'Coefficient de pont thermique'),
+                createElement('th', {}, '')
+            ])
+        ])
+    ]);
+
+    // Ventilation Section
+    const ventilation = createElement('div', { id: 'ventilation', class: 'main-section' }, '', [
+        createElement('h2', { 'lang-key': 'air_tightness' }, 'Etanchéité à l’air'),
+        createElement('select', { id: 'airTightnessSelect', onchange: handleAirTightnessChange }, '', [
+            createElement('option', { value: 'v50', selected: true }, 'v50'),
+            createElement('option', { value: 'n50' }, 'n50'),
+            createElement('option', { value: 'Q50' }, 'Q50')
+        ]),
+        createElement('input', { type: 'number', id: 'at_value', min: '1', max: '100', onchange: handleAirTightnessChange }),
+        createElement('span', { id: 'at_unit' }, 'at_unit'),
+        createElement('div', {}, '', [
+            createElement('h2', { 'lang-key': 'heat_recovery' }, 'Récupération de chaleur'),
+            createElement('span', { 'lang-key': 'enable_hr' }, 'Enable Heat Recovery'),
+            createElement('input', { type: 'checkbox', id: 'heatRecoveryCheckbox', onchange: handleHeatRecoveryCheckBox }),
+            createElement('input', { type: 'number', id: 'heatRecoveryEfficiency', min: '0', max: '100', style: 'display: none;', placeholder: 'Rendement', onchange: handleHeatRecoveryEfficiencyChange }),
+            createElement('span', { id: 'hr_unit', style: 'display: none;' }, '%'),
+            createElement('p'),
+            createElement('span', { 'lang-key': 'mean_extract_t', id: 'meanExtractTemperature_label', style: 'display: none;' }),
+            createElement('span', { id: 'meanExtractTemperature_value', style: 'display: none;', disabled: true }),
+            createElement('span', { id: 'meanExtractTemperature_warning','lang-key': 'extracttemperature_warning', style: 'display: none;'}),
+            createElement('p'),
+            createElement('span', { 'lang-key': 'supply_t', id: 'supplyTemperature_label', style: 'display: none;' }),
+            createElement('span', { id: 'supplyTemperature_value', style: 'display: none;', disabled: true })
+        ])
+    ]);
+
+    // Main Containers
+    const spacesContainer = createElement('div', { id: 'spacesContainer' });
+    const resultsContainer = createElement('div', { id: 'resultsContainer', class: 'main-section' });
+
+
+
+
+    // Append all sections to the body
+    document.getElementById(container_id).append(
+        header,
+        dataButtons,
+        tabsContainer,
+        boundaryConditions,
+        spaces,
+        walls,
+        ventilation,
+        spacesContainer,
+        resultsContainer
+    );
+	document.getElementById('exportDataBtn').addEventListener('click', exportData);
+	document.getElementById('importDataBtn').addEventListener('click', function() {
+    document.getElementById('fileInput').click(); // Trigger the hidden file input click
+	});	
+
+}
 
 
 
