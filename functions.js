@@ -24,14 +24,14 @@ function initializeVentilationTable() {
 
 function handleAddSpace() {
 
-	model.createNewSpace(`Space ${model.spaceIdCounter}`)
+	model.createNewSpace(`${translations[getCurrentLanguage()]['space']} ${model.spaceIdCounter}`)
 	renderAll() // new space has 0 flow and no walls --> no computation
 	
 }
 
 function handleAddBoundary() {
 
-	model.createNewBoundary(`Environnement ${model.spaceIdCounter}`)
+	model.createNewBoundary(`${translations[getCurrentLanguage()]['environment']} ${model.spaceIdCounter}`)
 	renderAll()
 }
 
@@ -48,7 +48,6 @@ function handleSpacePropertyChange(spaceId, property, value) {
         space[property] = isNaN(Number(value)) ? value : Number(value);
 		computeAll()
 		renderAll()
-		console.log(space)
 	}
 }
 
@@ -218,7 +217,6 @@ function handleDeleteWallElement(wallElementId) {
 }
 
 function handleSetDefaultBoundaryTemperatures(){
-	console.log("handle default bcs")
 	model.setDefaultBoundaryTemperatures()
 	computeAll()
 	renderAll()
@@ -267,7 +265,7 @@ function renderSpaceRow(table, space) {
     const row = table.insertRow(-1);  // Append row at the end of the table
     const heatingOptions = [
         { value: "radiators", label: "Radiateurs" },
-        { value: "floor", label: "Sol" },
+        { value: "floorheating", label: "Sol" },
         { value: "equilibrium", label: "No heating" }
     ];
 
@@ -278,7 +276,7 @@ function renderSpaceRow(table, space) {
     row.insertCell(2).innerHTML = `<input type="number" name="surfaceSol${space.id}" value="${space.floorarea}" onchange="handleSpacePropertyChange(${space.id}, 'floorarea', this.value)">`;
     row.insertCell(3).innerHTML = `<input type="number" name="volume${space.id}" value="${space.volume}" onchange="handleSpacePropertyChange(${space.id}, 'volume', this.value)">`;
     row.insertCell(4).innerHTML = `<select name="typeChauffage${space.id}" onchange="handleSpacePropertyChange(${space.id}, 'heating_type', this.value)">` +
-        heatingOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('') +
+        heatingOptions.map(opt => `<option lang-key="${opt.value}" value="${opt.value}">${translations[getCurrentLanguage()][opt.value]}</option>`).join('') +
         `</select>`;
     //row.insertCell(5).innerHTML = `<button onclick="handleDeleteSpace(${space.id})">Delete</button>`;
 
@@ -794,8 +792,6 @@ function renderBoundariesTable() {
 	
 	// Render temperatures
 	const zipcode_select = document.getElementById("municipality_select")
-	console.log(model.getBoundaryTemperatures())
-	console.log(document.getElementById("external_temperature"))
 	
 	document.getElementById("external_temperature").innerHTML = model.getBoundaryTemperatures()[0]+'°C'
 	document.getElementById("month_external_temperature").innerHTML = model.getBoundaryTemperatures()[1]+'°C'
@@ -863,20 +859,27 @@ function renderHeatRecovery(){
 function renderAirTightness(){
 	
 	unitDisplay = document.getElementById("at_unit")
+	refSurface = document.getElementById("at_ref_surface_div")
 
     // Check the selected value and update the unit display accordingly
     switch(model.otherData.airtightness.choice) {
         case 'v50':
             unitDisplay.textContent = "(m³/h)/m²";  // Set the unit for v50
+			refSurface.style.display = 'block'
             break;
         case 'n50':
             unitDisplay.textContent = "vol/h";  // Set the unit for n50
+			refSurface.style.display = 'none'
             break;
         case 'Q50':
             unitDisplay.textContent = "m³/h";  // Set the unit for Q50
+			refSurface.style.display = 'none'
+
             break;
         default:
             unitDisplay.textContent = "";  // No unit by default or if something goes wrong
+			refSurface.style.display = 'none'
+
     }
 	
 	document.getElementById('at_value').value = model.otherData.airtightness.value
@@ -888,7 +891,6 @@ function renderAirTightness(){
 function toggleVisibility(input) {
     var sections = document.querySelectorAll('.space-section, .main-section');
 
-	console.log("toggle",input)
 
     sections.forEach(section => {
         if (section.id == input) {
@@ -1019,8 +1021,6 @@ function importData() {
 function handleMunicipalityChange(){
 	const select_zip = document.getElementById("municipality_select")
 	model.setZip(select_zip.value)
-	console.log(model.zipCode)
-	console.log(model.getBoundaryTemperatures())
 	renderBoundariesTable()
 	
 }
@@ -1055,6 +1055,7 @@ function handleAirTightnessChange() {
 	//modify data
 	model.otherData['airtightness']['choice']=document.getElementById('airTightnessSelect').value
 	model.otherData['airtightness']['value'] = document.getElementById('at_value').value;
+	model.otherData['airtightness']['v50_refsurface'] = document.getElementById('at_ref_surface').value;
 
 	computeAll()
 	renderAll()
@@ -1178,12 +1179,20 @@ function initializePage(container_id) {
     const ventilation = createElement('div', { id: 'ventilation', class: 'main-section' }, '', [
         createElement('h2', { 'lang-key': 'air_tightness' }, 'Etanchéité à l’air'),
         createElement('select', { id: 'airTightnessSelect', onchange: handleAirTightnessChange }, '', [
-            createElement('option', { value: 'v50', selected: true }, 'v50'),
-            createElement('option', { value: 'n50' }, 'n50'),
-            createElement('option', { value: 'Q50' }, 'Q50')
+            createElement('option', { value: 'n50',selected: true }, 'n50'),
+            createElement('option', { value: 'v50' }, 'v50'),
+            //createElement('option', { value: 'Q50' }, 'Q50')
         ]),
         createElement('input', { type: 'number', id: 'at_value', min: '1', max: '100', onchange: handleAirTightnessChange }),
         createElement('span', { id: 'at_unit' }, 'at_unit'),
+		createElement('div', { id: 'at_ref_surface_div', style: 'display:none' }, '',[
+			createElement('span', {'lang-key':'at_ref_surface'}, ''),
+			createElement('input',{type:'number',id:'at_ref_surface',min: '0',onchange: handleAirTightnessChange}),
+			createElement('span', {}, 'm²'),
+		]),
+		
+
+
         createElement('div', {}, '', [
             createElement('h2', { 'lang-key': 'heat_recovery' }, 'Récupération de chaleur'),
             createElement('span', { 'lang-key': 'enable_hr' }, 'Enable Heat Recovery'),

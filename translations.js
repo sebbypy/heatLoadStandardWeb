@@ -54,7 +54,13 @@ var translations = {
 		"ground":"Sol",
 		"other_heated":"Mitoyen chauffé",
 		"other_unheated":"Espace ou mitoyen non chauffé",
-		"apply_default_temperatures":"Appliquer les températures par défaut"
+		"apply_default_temperatures":"Appliquer les températures par défaut",
+		"radiators":"Radiateurs",
+		"floorheating":"Chauffage sol",
+		"space":"Espace",
+		"environment":"Environnement",
+		"at_ref_surface":"Surface de référence pour l'essai d'infiltrations  ",
+
 
 
     },
@@ -66,7 +72,7 @@ var translations = {
         "space_temperature": "Binnentemperatuur (°C)",
         "floor_area": "Vloeroppervlakte (m²)",
         "interior_volume": "Binnenvolume (m³)",
-        "heating_type": "Type de chauffage",
+        "heating_type": "Type verwarming",
         "walls": "Wanden",
         "add_wall": "Wand toevoegen",
         "wall_name": "Naam",
@@ -83,7 +89,7 @@ var translations = {
 		"enable_hr": "Warmterecuperatie ?",
 		"heat_recovery":"Warmterecuperatie",
 		"boundaryconditions":"Randvoorwarden",
-		"ventilation_loss":"Ventilatie verlies",
+		"ventilation_loss":"Ventilatieverlies",
 		"results":"Resultaten",
 		"inner_volume":"Binnenvolume (m³)",
 		"add_bc": "Add buiten of buuromgeving",
@@ -113,7 +119,14 @@ var translations = {
 		"ground":"Grond",
 		"other_heated":"Verwarmde buurgebouw",
 		"other_unheated":"Onverwarmde buurgebouw of ruimte",
-		"apply_default_temperatures":"Default waarden toepassen"
+		"apply_default_temperatures":"Default waarden toepassen",
+		"radiators":"Radiatoren",
+		"floorheating":"Vloerverwarming",
+		"space":"Ruimte",
+		"environment":"Omgeving",
+		"at_ref_surface":"Referentieoppervlakte voor de luchtdicthheidstest  ",
+
+
     },
 
     // Add additional languages here

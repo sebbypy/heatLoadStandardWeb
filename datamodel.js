@@ -15,8 +15,9 @@ class DataModel {
                 'supplyTemperature': -7
             },
             'airtightness': {
-                'choice': "v50",
-                'value': 0
+                'choice': "n50",
+                'value': 0,
+				'v50_refsurface':0
             }
         };
 		this.zipCode = 1000
@@ -59,7 +60,6 @@ class DataModel {
 	
 
     createNewBoundary(name, type = 'unheated',bc_type='outside') {
-		console.log("create boundary")
         const newBoundary = {
             type: type,
             name: name,
@@ -169,8 +169,12 @@ class DataModel {
 
     getQ50() {
 
-        return this.otherData.airtightness.value * this.getTotalVolume()
-
+		if (this.otherData.airtightness.choice == 'n50'){
+			return this.otherData.airtightness.value * this.getTotalVolume()
+		}
+		else if (this.otherData.airtightness.choice == 'v50'){
+			return this.otherData.airtightness.value * this.otherData.airtightness.v50_refsurface
+		}
     }
 	
 	getBoundaryConditionTypes(){
@@ -182,11 +186,9 @@ class DataModel {
 	}
 	
 	setDefaultBoundaryTemperatures() {
-	    console.log("set default bcs")
 	    const default_temps = this.getBoundaryTemperatures()
 		
 		this.spaces.forEach(space => {
-			console.log(space)
 			if (space.type == 'unheated') {
 				switch (space.bc_type) {
 				case 'outside':
@@ -199,7 +201,6 @@ class DataModel {
 					space.temperature = default_temps[2]
 					break;
 				case 'ground':
-					console.log("this is a ground")
 					space.temperature = default_temps[2]
 					break;
 				default:
@@ -207,7 +208,6 @@ class DataModel {
 
 				}
 			}
-			console.log(space)
 		});
 
 	}
@@ -276,16 +276,11 @@ class DataModel {
         if (this.otherData.heatrecovery.checked && this.otherData.heatrecovery.meanExtractTemperature != null) {
 
             var eta = this.otherData.heatrecovery.efficiency / 100.
-			console.log(eta,typeof(eta))
-			console.log(this.otherData.heatrecovery.meanExtractTemperature,typeof(this.otherData.heatrecovery.meanExtractTemperature))
-			console.log(this.getTout(),typeof(this.getTout()))
 			this.otherData.heatrecovery.supplyTemperature = this.getTout() + eta * (this.otherData.heatrecovery.meanExtractTemperature - this.getTout())
         } 
 		else {
             this.otherData.heatrecovery.supplyTemperature = this.getTout()
         }
-		console.log("Supply T",this.otherData.heatrecovery.supplyTemperature)
-		console.log(typeof(this.otherData.heatrecovery.supplyTemperature))
     }
 
     getTotalVolume() {
