@@ -1,24 +1,35 @@
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        input[type="text"], input[type="number"], select {
-            box-sizing: border-box;
-        }
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+}
+table, th, td {
+	border: 1px solid #ddd;
+}
+th, td {
+	padding: 2px;
+	text-align: center;
+	min-height:30px;
+}
+th {
+	background-color: #f2f2f2;
+}
+input[type="text"], input[type="number"], select, multilevelselect {
+	box-sizing: border-box;
+}
+
+table tr {
+  min-height: 30px; /* Set your desired minimum height */
+  height: 30px; /* Ensures consistency */
+}
+
+table td, table th {
+  min-height: 30px; 
+  line-height: 30px; 
+}
 
 
-
-button, input[type=submit], select, input[type=number], input[type=text]{
+button, input[type=submit], select, multilevelselect, input[type=number], input[type=text]{
   padding: 5px 5px;
   /*margin: 3px 3px;*/
   cursor: pointer;
@@ -28,7 +39,7 @@ button, input[type=submit], select, input[type=number], input[type=text]{
 }
 
 input[type=number]{
-	width:60px;
+	width:80px;
   text-align: center;
 
 }
@@ -54,14 +65,14 @@ input[type=checkbox]{
 	color:white;
 	border-color:white;
 	font-size:32px;
-	padding:10px;
+	padding:5px;
 	
 }
 
 
 input{width: auto;}
 
-select{
+select, multilevelselect{
 width:250px;
  border-radius: 4px; }
 
@@ -83,10 +94,62 @@ margin:0px;
 
   .container
 {
-    padding-left: 100px;
-    padding-right: 100px;
+    padding-left: 0px;
+    padding-right: 0px;
 	position: relative
   }
+  
+  
+.sidebar {
+    background-color: #f4f4f4; /* Light background for the sidebar */
+    padding: 10px;
+	padding-top:50px;
+    border-right: 2px solid #ddd; /* Adds separation */
+	width: 300px;
+	height: 100vh;
+	left: 0;
+	display: flex;
+	flex-direction: column;
+
+}
+
+.sidebar button{
+	display:flex;
+    width: 100%;
+    text-align: left;
+    font-weight: bolder;
+	align-items:center;
+    padding: 15px;
+    border: none;
+	margin-top:10px;
+}
+
+.material-icons{
+	width:50px;
+	font-size:30px;
+}
+
+.sidebar a {
+	text-decoration: none;
+	color: white;
+	padding: 15px 20px;
+	display: block;
+	font-size: 18px;
+	transition: 0.3s;
+}
+
+.sidebar a:hover {
+	background-color: #555;
+}
+
+
+/* Main Content */
+.content {
+	/*margin-left: 250px;*/
+	padding: 20px;
+}
+
+  
   
   .layout-header
 {
@@ -94,7 +157,7 @@ margin:0px;
   justify-content: space-between;
   align-items: center;
   background-color: #fff;
-  height: 64px;
+  height: 85px;
   box-shadow: 0 1px 3px #646464;
   padding: 0 10px;
   margin: 0px;
@@ -133,3 +196,108 @@ table th {
     border-bottom: 2px solid #ddd; /* Divider for clarity 
 }
 */
+
+
+.tooltip {
+    position: relative;
+    /*display: inline-block;*/
+    cursor: pointer;
+}
+
+.tooltiptext {
+    visibility: hidden;
+	min-width: 150px;
+    max-width: 350px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%; /* Position above */
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+
+/*multiselect CSS */
+
+.multilevelselect {
+	position: relative;
+	display: inline-block;
+}
+
+/* Ensure dropdown menu appears correctly */
+.multilevelselect-menu {
+	display: none;
+	position: absolute;
+	min-width: 100%;
+	border: 1px solid;
+	background-color:white;
+	z-index:3
+}
+
+/* Show menu on hover */
+.multilevelselect:hover .multilevelselect-menu {
+	display: block;
+}
+
+/* Ensure dropdown items are clickable and positioned */
+.multilevelselect-item {
+	position: relative;
+	cursor: pointer;
+	border-bottom: 1px solid;
+	white-space: nowrap; /* Prevents text wrapping */
+	z-index:3;
+	padding: 5px
+}
+
+/* Ensure submenus appear correctly */
+.submenu {
+	display: none;
+	position: absolute;
+	left: 100%;
+	top: 0;
+	min-width: 100%;
+	border: 1px solid;
+	background-color:white;
+	z-index:3
+
+}
+
+/* Show submenu on hover */
+.multilevelselect-item:hover > .submenu {
+	display: block;
+}
+.multilevelselect-item:hover {
+	background-color: lightgray; /* Changes background color on hover */
+}
+
+.multilevelselect button {
+    text-align: left;  /*  Align text to the left */
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    background-color: white;
+}
+
+
+#main_container {
+    display: flex;
+    flex-direction: row;  /* Ensures horizontal alignment */
+    height: 100vh; /* Full viewport height */
+}
+
+.content {
+    flex: 1; /* Takes remaining space */
+    padding: 20px;
+    /*background-color: #ffffff;*/ /* White background */
+}

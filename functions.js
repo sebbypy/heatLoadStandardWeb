@@ -1,22 +1,21 @@
 function getCurrentLanguage() {
     var selector = document.getElementById('languageSelector');
-    return selector.value;
+    if (selector){
+		return selector.value;
+	}
+	return null;
 }
 
-// INITIALIZE function --> create main components of the HTML page programatically 
-// -------------------------------------------------------------------------------
+function translate(key) {
+    const lang = getCurrentLanguage(); // Get current language
+    const translationSet = translations[lang]; // Get the translations for the current language
 
-function initializeVentilationTable() {
-    var container = document.getElementById('ventilation');
-    var table = document.createElement('table');
-    table.id = 'ventilationTable';
-    container.appendChild(table);
-
-    // Initialize headers and rows with empty inputs
-    renderVentilationTable();
+    if (translationSet && key in translationSet) {
+        return translationSet[key]; // Return the translation if the key exists
+    }
+    
+    return key; // Return the key itself if no translation is found
 }
-
-
 
 // --------------------------------------------------
 // HANDLE functions --> handling user UI interactions 
@@ -25,6 +24,7 @@ function initializeVentilationTable() {
 function handleAddSpace() {
 
 	model.createNewSpace(`${translations[getCurrentLanguage()]['space']} ${model.spaceIdCounter}`)
+	model.computeAll()
 	renderAll() // new space has 0 flow and no walls --> no computation
 	
 }
@@ -41,200 +41,116 @@ function addOutsideBoundary() {
 	renderAll()
 }
 
+// SPACES
 
 function handleSpacePropertyChange(spaceId, property, value) {
-    const space = model.spaces.find(space => space.id === spaceId);
-    if (space) {
-        space[property] = isNaN(Number(value)) ? value : Number(value);
-		computeAll()
-		renderAll()
-	}
+	model.changeSpaceProperty(spaceId,property,value)	
+	//model.computeAll()
+	renderAll()
+
 }
-
-function handleAddWallElement() {
-    
-	model.createNewWallElement("Mur")
-	renderAll() // new element not yet used, no calc
-}
-
-function handleAddWallInstance(indexSpace) {
-
-    const space = model.spaces[indexSpace];
-
-	model.createNewWallInstance(space.id)
-	renderAll() // 0 area wall, no calculation needed
-
-    toggleVisibility(`space-${indexSpace}`);
-}
-
 
 function handleSpaceNameChange(id, newName) {
-    const index = model.spaces.findIndex(space => space.id === id);
-    if (index !== -1) {  // Check if the space was found
-        model.spaces[index].name = newName;
-        renderWallInstances();
-    } else {
-        console.error("Space not found with id:", id);
-    }
+	model.renameSpace(id,newName)
 	renderAll()
 }
 
 
+// Ventilation
+
+
+function handleVentilationChange(spaceId, parameter, value){
+	model.changeVentilationProperty(spaceId,parameter,value)
+	renderAll()
+}
+
+
+
+// WALL / Wall elements
+
+function handleAddWallElement() {
+    
+	model.createNewWallElement("Mur",0.24,0.02)
+	renderAll() // new element not yet used, no calc
+}
+
 function handleWallNameChange(wallElementId, newName) {
-    const element = model.wallElements.find(element => element.id === wallElementId);
-    if (element) {
-        element.name = newName;
-    }
+	model.renameWallElement(wallElementId, newName)
 	renderAll() // no calc needed
 }
 
 function handleWalUValueChange(wallElementId, newUValue) {
-	
-	// updating model
-    const welement = model.wallElements.find(element => element.id === wallElementId);
-    if (welement) {
-        welement.uValue = parseFloat(newUValue);
-    }
-	computeAll()
+	model.changeWallUvalue(wallElementId,newUValue)
 	renderAll()
 }
 
 function handleWallThermalBridgeChange(wallElementId, newThermalBridge) {
-    const welement = model.wallElements.find(welement => welement.id === wallElementId);
-    if (welement) {
-        welement.thermalBridge = parseFloat(newThermalBridge);
-    }
-	computeAll()
+	model.changeWallBridgeValue(wallElementId,newThermalBridge)
 	renderAll()
 }
 
-function handleVentilationChange(spaceId, parameter, value){
-    var space = model.spaces.find(e => e.id === spaceId);
-    if (space) {
-        space.ventilation[parameter] = value;
-		computeAll()
-		renderAll()
-    }
+
+// Wall instances
+
+function handleAddWallInstance(indexSpace) {
+
+    const space = model.spaces[indexSpace];
+	model.createNewWallInstance(space.id)
+	renderAll() // 0 area wall, no calculation needed
+    toggleVisibility(`space-${indexSpace}`);
 }
+
 
 function handleWallInstanceAreaChange(wallId, newArea,callerspaceid) {
-    const wallInstance = model.wallInstances.find(m => m.id === wallId);
-    if (wallInstance) {
-        wallInstance.Area = Number(newArea);
-	}
-	computeAll()
+	model.changeWallInstancearea(wallId,newArea)
 	renderAll()
-	toggleVisibility(`space-${callerspaceid}`)
+	toggleVisibility(`space-${callerspaceid}`) //restore the view of the space where the user was
 }
 
 
 
 function handleWallInstanceTypeChange(wallId, newTypeId,callerspaceid) {
-	wallId = Number(wallId);  // Convert to number
-    newTypeId = Number(newTypeId);
-    const wallInstance = model.wallInstances.find(m => m.id === wallId);
-    if (wallInstance) {
-        wallInstance.elementId = newTypeId;
-    } else {
-        console.error('Mur not found with id:', wallId);
-    }
-	
-	computeAll()
+	model.changeWallInstanceType(wallId,newTypeId)
 	renderAll()
-	
 	toggleVisibility(`space-${callerspaceid}`)
 }
 
 function handleNeighbourSpaceChange(wallId, newSpaceId,callerspaceid) {
-	wallId = Number(wallId);  // Convert to number
-    newSpaceId = Number(newSpaceId);
-
-
-    // Find the wall object in wallInstances array with the given id
-    const wallInstance = model.wallInstances.find(m => m.id === wallId);
-    if (wallInstance) {
-        if (wallInstance.spaces.length === 1) {
-            wallInstance.spaces.push(newSpaceId); // Add new linked space if only one was initially present
-        } else {
-            wallInstance.spaces[1] = newSpaceId; // Replace existing linked space
-        }
-		
-    } else {
-        console.error('Mur not found with id:', wallId);
-    }
-
-	computeAll()
+	model.changeWallInstanceNeighbour(wallId,newSpaceId)
 	renderAll()
 	toggleVisibility(`space-${callerspaceid}`)
-
-
 }
 
 function handleDeleteWallInstance(wallId,callerspaceid) {
 
-    model.wallInstances = model.wallInstances.filter(wall => wall.id !== wallId);
-
-    computeAll()
+	model.deleteWallInstance(wallId)
 	renderAll()
-
 	toggleVisibility(`space-${callerspaceid}`)
 
 }
 
 function handleDeleteSpace(spaceId) {
-    // Check if the space is referenced in any wall instances
-    const isReferenced = model.wallInstances.some(wall => wall.spaces.includes(spaceId));
 
-    if (isReferenced) {
-        alert("Cannot delete this space because it is referenced in wall instances.");
-    } else {
-        // Proceed with deletion: Remove the space from the array
-        model.spaces = model.spaces.filter(space => space.id !== spaceId);
-
-		renderTabs();
-        renderSpacesTable();  
-		renderBoundariesTable();
-		renderWallInstances();
-		renderResults()
-    }
-}
-
-
-function handleDeleteWallElement(wallElementId) {
-    // Check if the wall element is referenced in any wall instances
-    const isReferenced = model.wallInstances.some(wall => wall.elementId === wallElementId);
-
-    if (isReferenced) {
-        alert("Cannot delete this wall element because it is referenced in wall instances.");
-    } else {
-        // Proceed with deletion: Remove the wall element from the array
-        model.wallElements = model.wallElements.filter(wElement => wElement.id !== wallElementId);
-        renderWallElements();  // Re-render the wall elements table to reflect deletion
-
-        // Optional: Update other components that might be affected
-        renderWallInstances();
-    }
-}
-
-function handleSetDefaultBoundaryTemperatures(){
-	model.setDefaultBoundaryTemperatures()
-	computeAll()
+	model.deleteSpace(spaceId)
+	renderTabs();
+	
 	renderAll()
 
 	
 }
 
 
-// ----------------------
-// Compute full case
-// ----------------------
+function handleDeleteWallElement(wallElementId) {
+	
+	model.deleteWallElement(wallElementId)
+	renderWallElements();  // Re-render the wall elements table to reflect deletion
+	renderWallInstances();
+    
+}
 
-function computeAll(){
-	//computeEquilibriumTemperatures()
-	model.computeExtractMeanTemperature()
-	model.computeSupplyTemperature()
-	model.computeAllWallInstanceLosses()
-	model.computeAllVentilationLosses()
+function handleSetDefaultBoundaryTemperatures(){
+	model.setDefaultBoundaryTemperatures()
+	renderAll()
 }
 
 
@@ -256,6 +172,7 @@ function renderAll(){
 	renderAirTightness()
 	renderHeatRecovery()
 	renderVentilationTable()
+	renderReheat()
 	renderResults()
 	
 }
@@ -359,14 +276,16 @@ function renderResults(){
     const headers_keys = ["spaces", "transmission_heat_loss", "ventilation_heat_loss", "heatup_loss","total_heat_loss","per_m2"];
     
     // Get the 'results' div
-    const resultsDiv = document.getElementById("resultsContainer");
+    const resultsDiv = document.getElementById("results");
     
 	const header = document.createElement("h2");
-    header.setAttribute("lang-key", "results");
+    header.setAttribute("lang-key", "results_header");
+    header.setAttribute("id", "results_header");
     header.textContent = "Résultats";
     
     // Create the table element
     const table = document.createElement("table");
+	table.setAttribute('id',"heatloss_table")
     table.border = "1"; // Optional: adds a border to the table
 
     // Create the table header row
@@ -399,9 +318,9 @@ function renderResults(){
             const values = [
                 space.transmission_heat_loss,
                 space.ventilation.ventilation_loss,
-                0, // Assuming heatup_loss is 0 for now
-                space.transmission_heat_loss + space.ventilation.ventilation_loss,
-				(space.transmission_heat_loss + space.ventilation.ventilation_loss)/space.floorarea
+                space.reheat_power, 
+                space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power,
+				(space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power)/space.floorarea
 				
             ];
 
@@ -434,6 +353,39 @@ function renderResults(){
     resultsDiv.appendChild(table);
 }
 
+/**
+ * Adds a total row to a given table.
+ * @param {HTMLTableElement} table - The table element to append the total row to.
+ * @param {Array<number|null>} totals - The list of total values (can contain null values).
+ */
+function addTotalRow(table, totals,nDecimals) {
+    if (!table || !Array.isArray(totals)) {
+        console.error("Invalid arguments: table must be an HTMLTableElement and totals must be an array.");
+        return;
+    }
+
+    // Create a total row
+    const totalRow = document.createElement("tr");
+    totalRow.classList.add("total-row");
+
+    // Create the first cell with "Total" label
+    const totalLabelCell = document.createElement("td");
+    totalLabelCell.setAttribute("lang-key", "total");
+    totalLabelCell.textContent = translations[getCurrentLanguage()]["total"];
+    totalRow.appendChild(totalLabelCell);
+
+    // Append total values to the row, leaving the cell empty if value is null
+    totals.forEach(total => {
+        const totalCell = document.createElement("td");
+        totalCell.textContent = total !== null ? total.toFixed(nDecimals) : ""; // Leave empty if null
+        totalRow.appendChild(totalCell);
+    });
+
+    // Append the total row to the table
+    table.appendChild(totalRow);
+}
+
+
 
 function renderWallElementRow(table, wElement) {
     const row = table.insertRow(-1); // Append row at the end of the table
@@ -454,6 +406,62 @@ function renderWallElementRow(table, wElement) {
 
 }
 
+function renderReheat(){
+	
+	inertia = document.getElementById("inertia-select")
+	inertia.value = model.getInertia()
+	
+	setback = document.getElementById("setback-select")
+	setback.value = model.getSetbackPeriod()
+	
+	table = document.getElementById("reheat_table")
+	table.innerHTML=""
+	
+	const columns = [
+    { header: "space_name", type: "text", value: "spaceName" },  // New column
+    { header: "floor_area", type: "text", value: "floorArea" },
+    { 
+        header: "reheat_time", 
+        type: "select", 
+        value: "reheatTime",
+		options: [{value:"-",label:"-"},
+					{value:"0.5",label:0.5},
+					{value:"1",label:1},
+					{value:"2",label:2},
+					{value:"3",label:3},
+					{value:"4",label:4},
+					{value:"6",label:6},
+					{value:"12",label:12},
+					],
+		onchange: (event, row) => handleSpaceReheatTimeChange(event, row)
+    },
+    { header: "reheat_factor", type: "text", value: "reheatPerSquareMeter" },
+    { header: "reheat_power", type: "text", value: "reheatPower" }
+	]
+	
+	var data = []
+	
+	model.spaces.forEach( space =>{
+		
+		if (space.type == "heated"){
+			console.log(space)
+			var row = {	spaceName:space.name,
+						spaceid: space.id,
+						reheatTime: space.heat_up_time,
+						floorArea:space.floorarea,
+						reheatPerSquareMeter: model.getReheatPower(space.id),
+						reheatPower: space.reheat_power
+				}
+				data.push(row)
+		}
+	})		
+	
+	renderTable(table,columns,data)
+
+		
+	}
+
+
 function renderTabs(){
 
     const activeTab = document.querySelector('.tab.active-tab');
@@ -464,27 +472,7 @@ function renderTabs(){
 	var spaceTabs = document.getElementById('spacetabs')
     spaceTabs.innerHTML = ''; // Clear previous tabs to refresh them
 
-    var container = document.getElementById('spacesContainer');
-    container.innerHTML = ''; // Clear existing tables
-
-    model.spaces.forEach((space, index) => {
-
-		if (space.type == "heated"){
-
-			// Create a tab for each space
-			var tab = document.createElement('button');
-			tab.textContent = space.name;
-			tab.setAttribute('class','tab');
-			tab.id = 'tab-space-' + index;
-			tab.onclick = function () {
-				toggleVisibility(`space-${index}`);
-			};
-			spaceTabs.appendChild(tab);
-		}
-	})
-
 	document.getElementById(activeTabId).classList.add('active-tab') // restore default active tab or previouslys active tabe
-
 	
 	setTabsColorBehavior()
 	
@@ -492,19 +480,29 @@ function renderTabs(){
 }	
 
 function setTabsColorBehavior(){
-  // Select all buttons with the class 'myButton'
-	const buttons = document.querySelectorAll('.tab');
+  //color selected menu
+  
+  const buttons = document.querySelectorAll('.tab');
 
-	// Add event listener to each button
 	buttons.forEach(button => {
 		button.addEventListener('click', function() {
-		// Remove 'active' class from all buttons
 		buttons.forEach(btn => btn.classList.remove('active-tab'));
-
-		// Add 'active' class to the clicked button
 		this.classList.add('active-tab');
 		});
 	})
+}
+
+function setSpaceTabsColorBehavior(){
+	//color selected space button when displaying space wall instances
+	
+	const spacetabs = document.querySelectorAll('[id^="tab-space-"]')
+	
+	spacetabs.forEach(tab => {
+		tab.addEventListener('click', function() {
+			spacetabs.forEach( othertab => othertab.classList.remove('active-tab'));
+			this.classList.add('active-tab');
+		});
+	});
 }
 
 
@@ -513,151 +511,178 @@ function renderWallInstances() {
     var container = document.getElementById('spacesContainer');
     container.innerHTML = ''; // Clear existing tables
 
+	const heading = document.createElement("h2");
+	
+	heading.setAttribute('lang-key', 'wall_elements_header');
+	heading.textContent = translate('wall_elements_header');
+	container.appendChild(heading);
 
     model.spaces.forEach((space, index) => {
 
+		if (space.type == "heated"){
 
-		var spaceTotalLoss = 0;
-		var spaceTotalSurface = 0;
+			var tab = document.createElement('button');
+			tab.textContent = space.name;
+			tab.setAttribute('class','tab');
+			tab.id = 'tab-space-' + index;
+			tab.onclick = function () {
+				toggleVisibility(`space-${index}`);
+			};
+			container.appendChild(tab)
+		}
+	})
 
-        var spaceDiv = document.createElement('div');
-        spaceDiv.className = 'space-section';
-        spaceDiv.id = `space-${index}`;
-        spaceDiv.style.display = 'none'; // Start with the table hidden
+	//after createing all button for spaces, set color behaviour
+	setSpaceTabsColorBehavior()
 
-		header = document.createElement("h3")
-		header.textContent = `Space: ${space.name}`;
-		spaceDiv.appendChild(header);
- 
-		const addButton = document.createElement('button');
-		//addButton.setAttribute('lang-key', 'add_wall');
-		//addButton.textContent = translations[getCurrentLanguage()]['add_wall'];
-		addButton.textContent = "+";
-		addButton.classList.add("add-button")
-		addButton.onclick = () => handleAddWallInstance(index);
-		spaceDiv.appendChild(addButton);
+    model.spaces.forEach((space, index) => {
 
-		// Create table
-		const table = document.createElement('table');
-		spaceDiv.appendChild(table);
+		if (space.type == "heated"){
 
-		// Add table header
-		const headerRow = document.createElement('tr');
-		['wall', 'neighbour_space', 'wall_area', 'transmission_heat_loss', ''].forEach(key => {
-			const th = document.createElement('th');
-			th.setAttribute('lang-key', key);
-			th.textContent = translations[getCurrentLanguage()][key] || key;
-			headerRow.appendChild(th);
-		});
-		table.appendChild(headerRow);
+			var spaceTotalLoss = 0;
+			var spaceTotalSurface = 0;
 
-		// Add rows for each wall instance
-			model.wallInstances
-				.filter(wall => wall.spaces.includes(space.id))
-				.forEach(wall => {
-					const row = document.createElement('tr');
-					const linkedSpaceId = wall.spaces.find(id => id !== space.id);
-					const linkedSpace = model.spaces.find(e => e.id === linkedSpaceId);
+			var spaceDiv = document.createElement('div');
+			spaceDiv.className = 'space-section';
+			spaceDiv.id = `space-${index}`;
+			spaceDiv.style.display = 'none'; // Start with the table hidden
+			console.log(spaceDiv)
 
-					const multiplier = wall.spaces.indexOf(space.id) === 0 ? 1 : -1;
-					spaceTotalLoss += multiplier * wall.transmissionLoss;
-					spaceTotalSurface += wall.Area;
 
-					// Wall Element Type Dropdown
-					const wallElementCell = document.createElement('td');
-					const wallElementSelect = document.createElement('select');
-					wallElementSelect.onchange = () => handleWallInstanceTypeChange(wall.id, wallElementSelect.value, index);
-					const placeholderOption = document.createElement('option');
-					placeholderOption.value = '';
-					wallElementSelect.appendChild(placeholderOption);
+			header = document.createElement("h3")
+			header.textContent = `Space: ${space.name}`;
+			spaceDiv.appendChild(header);
+	 
+			const addButton = document.createElement('button');
+			//addButton.setAttribute('lang-key', 'add_wall');
+			//addButton.textContent = translations[getCurrentLanguage()]['add_wall'];
+			addButton.textContent = "+";
+			addButton.classList.add("add-button")
+			addButton.onclick = () => handleAddWallInstance(index);
+			spaceDiv.appendChild(addButton);
 
-					model.wallElements.forEach(wElement => {
-						const option = document.createElement('option');
-						option.value = wElement.id;
-						option.textContent = wElement.name;
-						if (wElement.id === wall.elementId) {option.selected = true;}
-						wallElementSelect.appendChild(option);
-					});
-					wallElementCell.appendChild(wallElementSelect);
-					row.appendChild(wallElementCell);
+			// Create table
+			const table = document.createElement('table');
+			spaceDiv.appendChild(table);
 
-					// Neighbour Space Dropdown
-					const neighbourCell = document.createElement('td');
-					const neighbourSelect = document.createElement('select');
-					neighbourSelect.onchange = () => handleNeighbourSpaceChange(wall.id, neighbourSelect.value, index);
-					const placeholderOption2 = document.createElement('option');
-					placeholderOption2.value = '';
-					neighbourSelect.appendChild(placeholderOption2);
-					model.spaces
-						.filter(otherSpace => otherSpace.id !== space.id)
-						.forEach(otherSpace => {
+			// Add table header
+			const headerRow = document.createElement('tr');
+			['wall', 'neighbour_space', 'wall_area', 'transmission_heat_loss', ''].forEach(key => {
+				const th = document.createElement('th');
+				th.setAttribute('lang-key', key);
+				th.textContent = translations[getCurrentLanguage()][key] || key;
+				headerRow.appendChild(th);
+			});
+			table.appendChild(headerRow);
+
+			// Add rows for each wall instance
+				model.wallInstances
+					.filter(wall => wall.spaces.includes(space.id))
+					.forEach(wall => {
+						const row = document.createElement('tr');
+						const linkedSpaceId = wall.spaces.find(id => id !== space.id);
+						const linkedSpace = model.spaces.find(e => e.id === linkedSpaceId);
+
+						const multiplier = wall.spaces.indexOf(space.id) === 0 ? 1 : -1;
+						spaceTotalLoss += multiplier * wall.transmissionLoss;
+						spaceTotalSurface += wall.Area;
+
+						// Wall Element Type Dropdown
+						const wallElementCell = document.createElement('td');
+						const wallElementSelect = document.createElement('select');
+						wallElementSelect.onchange = () => handleWallInstanceTypeChange(wall.id, wallElementSelect.value, index);
+						const placeholderOption = document.createElement('option');
+						placeholderOption.value = '';
+						wallElementSelect.appendChild(placeholderOption);
+
+						model.wallElements.forEach(wElement => {
 							const option = document.createElement('option');
-							option.value = otherSpace.id;
-							option.textContent = otherSpace.name;
-							if (otherSpace.id === linkedSpaceId) option.selected = true;
-							neighbourSelect.appendChild(option);
+							option.value = wElement.id;
+							option.textContent = wElement.name;
+							if (wElement.id === wall.elementId) {option.selected = true;}
+							wallElementSelect.appendChild(option);
 						});
-					neighbourCell.appendChild(neighbourSelect);
-					row.appendChild(neighbourCell);
+						wallElementCell.appendChild(wallElementSelect);
+						row.appendChild(wallElementCell);
 
-					// Wall Area Input
-					const areaCell = document.createElement('td');
-					const areaInput = document.createElement('input');
-					areaInput.type = 'number';
-					areaInput.value = wall.Area;
-					areaInput.onchange = () => handleWallInstanceAreaChange(wall.id, areaInput.value, index);
-					areaCell.appendChild(areaInput);
-					row.appendChild(areaCell);
+						// Neighbour Space Dropdown
+						const neighbourCell = document.createElement('td');
+						const neighbourSelect = document.createElement('select');
+						neighbourSelect.onchange = () => handleNeighbourSpaceChange(wall.id, neighbourSelect.value, index);
+						const placeholderOption2 = document.createElement('option');
+						placeholderOption2.value = '';
+						neighbourSelect.appendChild(placeholderOption2);
+						model.spaces
+							.filter(otherSpace => otherSpace.id !== space.id)
+							.forEach(otherSpace => {
+								const option = document.createElement('option');
+								option.value = otherSpace.id;
+								option.textContent = otherSpace.name;
+								if (otherSpace.id === linkedSpaceId) option.selected = true;
+								neighbourSelect.appendChild(option);
+							});
+						neighbourCell.appendChild(neighbourSelect);
+						row.appendChild(neighbourCell);
 
-					// Transmission Loss Input
-					const lossCell = document.createElement('td');
-					//const lossInput = document.createElement('p');
-					//lossInput.type = 'text';
-					lossCell.name = `lossWallInstance${wall.id}`;
-					lossCell.innerHTML = (wall.transmissionLoss * multiplier).toFixed(0);
-					//lossInput.disabled = true;
-					//lossCell.appendChild(lossInput);
-					row.appendChild(lossCell);
+						// Wall Area Input
+						const areaCell = document.createElement('td');
+						const areaInput = document.createElement('input');
+						areaInput.type = 'number';
+						areaInput.value = wall.Area;
+						areaInput.onchange = () => handleWallInstanceAreaChange(wall.id, areaInput.value, index);
+						areaCell.appendChild(areaInput);
+						row.appendChild(areaCell);
 
-					// Delete Button
-					const actionsCell = document.createElement('td');
-					const deleteButton = document.createElement('button');
-					deleteButton.innerHTML = '<i class="material-icons">delete</i>'
+						// Transmission Loss Input
+						const lossCell = document.createElement('td');
+						//const lossInput = document.createElement('p');
+						//lossInput.type = 'text';
+						lossCell.name = `lossWallInstance${wall.id}`;
+						lossCell.innerHTML = (wall.transmissionLoss * multiplier).toFixed(0);
+						//lossInput.disabled = true;
+						//lossCell.appendChild(lossInput);
+						row.appendChild(lossCell);
+
+						// Delete Button
+						const actionsCell = document.createElement('td');
+						const deleteButton = document.createElement('button');
+						deleteButton.innerHTML = '<i class="material-icons">delete</i>'
 
 
-					deleteButton.onclick = () => handleDeleteWallInstance(wall.id, index);
-					actionsCell.appendChild(deleteButton);
-					row.appendChild(actionsCell);
+						deleteButton.onclick = () => handleDeleteWallInstance(wall.id, index);
+						actionsCell.appendChild(deleteButton);
+						row.appendChild(actionsCell);
 
-					table.appendChild(row);
-				});
+						table.appendChild(row);
+						
+					});
 
+			
+			
+			 // Add total row
+			const totalRow = document.createElement('tr');
+			totalRow.classList.add('total-row');
+
+			['Total', '', spaceTotalSurface.toFixed(1), spaceTotalLoss.toFixed(0), ''].forEach((text, i) => {
+				const cell = document.createElement(i === 2 || i === 3 ? 'td' : 'td');
+				cell.textContent = text;
+				totalRow.appendChild(cell);
+			});
+
+			table.appendChild(totalRow);
+			
+			container.appendChild(spaceDiv);
+			space.transmission_heat_loss = spaceTotalLoss
 		
+		}
 		
-		 // Add total row
-		const totalRow = document.createElement('tr');
-		totalRow.classList.add('total-row');
-
-		['Total', '', spaceTotalSurface.toFixed(1), spaceTotalLoss.toFixed(0), ''].forEach((text, i) => {
-			const cell = document.createElement(i === 2 || i === 3 ? 'td' : 'td');
-			cell.textContent = text;
-			totalRow.appendChild(cell);
-		});
-
-		table.appendChild(totalRow);
-		
-        container.appendChild(spaceDiv);
-		space.transmission_heat_loss = spaceTotalLoss
 	});
 
 	
-    //renderVentilationTable(); // Ensure the ventilation table is also updated
-	//computeAllVentilationLosses()
 }
 
 
 function renderVentilationTable() {
-	
 	
     var table = document.getElementById('ventilationTable');
     if (!table) {
@@ -675,15 +700,30 @@ function renderVentilationTable() {
         "transfer_temperature",
         "mechanical_extract_flowrate"
     ];
+	var ventilation_tooltips = {
+		"natural_supply_flowrate": "natural_supply_tooltip",
+		"mechanical_supply_flowrate": null,
+		"transfer_flowrate": "transfer_flow_tooltip",
+		"transfer_temperature": null,
+		"mechanical_extract_flowrate": null
+	}
+
 
     // Create the header row for spaces
     var headerRow = document.createElement('tr');
-    headerRow.innerHTML = '<th>Parameter / Space</th>';
+	var headerElement = document.createElement('th');
+	headerElement.setAttribute('lang-key','space')
+	headerElement.innerText = translate('space')
+	headerRow.appendChild(headerElement)
+    //headerRow.innerHTML = '<th>Parameter / Space</th>';
     parameters.forEach(param => {
-        var th = document.createElement('th');
+		//function createElement(tag, attributes = {}, innerText = '', children = [], tooltipKey = '') {
+		headerRow.appendChild(createElement('th',{'lang-key':param},innerText = translations[getCurrentLanguage()][param] ,children=[],tooltipKey=ventilation_tooltips[param]))
+
+        /*var th = document.createElement('th');
         th.setAttribute('lang-key', param);
         th.textContent = translations[getCurrentLanguage()][param];
-        headerRow.appendChild(th);
+        headerRow.appendChild(th);*/
     });
 	
 	var th = document.createElement('th');
@@ -732,13 +772,13 @@ function renderVentilationTable() {
 			});
 
 			var cell = document.createElement('td');
-			var input = document.createElement('span');
+			//var input = document.createElement('span');
 			//input.type = 'text';
 			//input.value = space.ventilation.ventilation_loss.toFixed(0);
 			//input.disabled = true; // Make the input read-only
-			input.innerHTML = space.ventilation.ventilation_loss.toFixed(0)
-			input.name = "ventilationLoss"+space.id
-			cell.appendChild(input);
+			cell.innerHTML = space.ventilation.ventilation_loss.toFixed(0)
+			cell.name = "ventilationLoss"+space.id
+			//cell.appendChild(input);
 			row.appendChild(cell);
 			totals['loss'] += space.ventilation.ventilation_loss
 			
@@ -786,12 +826,17 @@ function renderSpacesTable() {
 			renderSpaceRow(table, space, index);
 		}
     });
+	
+	
+	addTotalRow(table,[null,model.getTotalFloorArea(),model.getTotalVolume(),null,null],1)
+   
+
 }
 
 function renderBoundariesTable() {
 	
-	// Render temperatures
 	const zipcode_select = document.getElementById("municipality_select")
+	zipcode_select.value = model.zipCode
 	
 	document.getElementById("external_temperature").innerHTML = model.getBoundaryTemperatures()[0]+'°C'
 	document.getElementById("month_external_temperature").innerHTML = model.getBoundaryTemperatures()[1]+'°C'
@@ -887,75 +932,236 @@ function renderAirTightness(){
 
 
 
-
 function toggleVisibility(input) {
-    var sections = document.querySelectorAll('.space-section, .main-section');
+	
+	console.log("toggle ",input)
+	
+    var mainsections = document.querySelectorAll('.main-section');
+    var spacessections = document.querySelectorAll('.space-section');
 
-
-    sections.forEach(section => {
-        if (section.id == input) {
-            section.style.display = 'block'; // Show this section
-        } else {
-            section.style.display = 'none'; // Hide other sections
-        }
+    // Hide all main sections
+    mainsections.forEach(section => {
+        section.style.display = 'none';
     });
 
+    // Hide all space sections
+    spacessections.forEach(section => {
+        section.style.display = 'none';
+    });
+
+    if (document.getElementById(input)) {
+        document.getElementById(input).style.display = 'block';
+    }
+
+    // Special case: If "spaces_walls" is selected, show it and the first space section
+    if (input === "spacesContainer") {
+        let firstSpaceSection = document.querySelector('.space-section');
+		if (firstSpaceSection) {
+            firstSpaceSection.style.display = 'block';
+        }
+		
+		// set colors of buttons
+		let firstSpaceButton = document.querySelector('[id^="tab-space-"]')
+		if (firstSpaceButton){
+			document.querySelectorAll('[id^="tab-space-"]').forEach(button => {
+				button.classList.remove('active-tab')
+				})
+			firstSpaceButton.classList.add('active-tab');
+		}
+    }
+
+    // If input is a space section, show "spaces_walls" + the specific space section
+    if (input.startsWith('space-')) {
+        document.getElementById("spacesContainer").style.display = 'block';
+        document.getElementById(input).style.display = 'block';
+    }
 }
+
+
 function renderMainTabs() {
     var tabContainer = document.getElementById('maintabs');
     tabContainer.innerHTML = ''; // Clear existing tabs
 
 
-    var fixedTabs = ['spaces','boundaryconditions', 'wall_elements', 'ventilation']
+    var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results']
 
+	var icons = [`<span class="material-icons">space_dashboard</span>`,
+			`<span class="material-icons">thermostat</span>`,
+			`<span class="material-icons">air</span>`,
+			getIcon('insulation'),
+			getIcon('areas'),
+			getIcon('reheat'),
+			`<span class="material-icons">calculate</span>`
+			]
+			
+	
     for (var i = 0; i < fixedTabs.length; i++) {
         (function (tabName) {
             var tab = document.createElement('button');
-			tab.setAttribute('lang-key',tabName)
+
+			var textSpan = document.createElement('span')
+			textSpan.setAttribute('lang-key',tabName)
+            textSpan.textContent = translate(tabName);
+
 			tab.setAttribute('class','tab')
-            tab.textContent = translations[getCurrentLanguage()][tabName];
 
             tab.id = 'tab-' + tabName;
             tab.onclick = function () {
                 toggleVisibility(tabName);
             };
+			
+			
             tabContainer.appendChild(tab);
+			
+			tab.appendChild(textSpan)
+			tab.insertAdjacentHTML('afterbegin', icons[i]);
+
         })(fixedTabs[i]); // Pass the current tab name to the IIFE
     }
 
-	var resultsbutton = document.createElement('button');
-	resultsbutton.textContent = "results";
-	resultsbutton.id = 'tab-results';
-	resultsbutton.setAttribute('class','tab')
-	resultsbutton.setAttribute('lang-key','results')
-	resultsbutton.textContent = translations[getCurrentLanguage()]['results'];
-	resultsbutton.onclick = function () {
-			toggleVisibility(`resultsContainer`);
-	};
-	resultsTab = document.getElementById('resultstabs')
-	resultsTab.innerHTML = '';
-	resultsTab.appendChild(resultsbutton)
-
-
 }
-
 
 function switchLanguage(lang) {
     document.querySelectorAll("[lang-key]").forEach(function(element) {
-        var key = element.getAttribute("lang-key");
-        element.innerHTML = translations[lang][key] || key;
-    });
+		updateElementLanguage(element,lang)
+	})
+}
+
+
+function updateElementLanguage(element, lang) {
+    var key = element.getAttribute("lang-key");
+    if (!key) return; // Skip if no language key is found
+
+    var translation = translations[lang][key] || key;
+
+    // Save existing child elements before modifying innerHTML
+    let children = Array.from(element.children);
+
+    // Update the main element’s innerHTML with the translated text (including HTML formatting)
+    element.innerHTML = translation;
+
+    // Reattach saved child elements (like tooltips)
+    children.forEach(child => element.appendChild(child));
+}
+
+
+function openFilenameModal() {
+    // Check if modal already exists
+    if (document.getElementById("filenameModal")) {
+        document.getElementById("filenameModal").style.display = "block";
+        return;
+    }
+
+    // Create modal container
+    const modal = document.createElement("div");
+    modal.id = "filenameModal";
+    modal.style.cssText = `
+        display: block;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    `;
+
+    // Create modal content
+    const modalContent = document.createElement("div");
+    modalContent.style.cssText = `
+        background-color: white;
+        margin: 15% auto;
+        padding: 20px;
+        width: 300px;
+        border-radius: 5px;
+        text-align: center;
+        position: relative;
+    `;
+
+    // Close button
+    const closeButton = document.createElement("span");
+    closeButton.innerHTML = "&times;";
+    closeButton.style.cssText = `
+        position: absolute;
+        right: 10px;
+        top: 5px;
+        font-size: 24px;
+        cursor: pointer;
+    `;
+    closeButton.onclick = closeModal;
+
+    // Title
+    const title = document.createElement("h2");
+    title.textContent = "Enter file name:";
+
+    // Input field
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = "filenameInput";
+    input.value = "heatload_standard.json";
+    input.style.cssText = "width: 90%; padding: 5px; margin: 10px 0;";
+
+    // OK button
+    const okButton = document.createElement("button");
+    okButton.textContent = "OK";
+    okButton.style.cssText = "margin-right: 10px; padding: 5px 10px;";
+    okButton.onclick = confirmFilename;
+
+    // Cancel button
+    const cancelButton = document.createElement("button");
+    cancelButton.textContent = "Cancel";
+    cancelButton.style.cssText = "padding: 5px 10px;";
+    cancelButton.onclick = closeModal;
+
+    // Append elements
+    modalContent.appendChild(closeButton);
+    modalContent.appendChild(title);
+    modalContent.appendChild(input);
+    modalContent.appendChild(okButton);
+    modalContent.appendChild(cancelButton);
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+}
+
+function closeModal() {
+    const modal = document.getElementById("filenameModal");
+    if (modal) modal.style.display = "none";
+}
+
+function confirmFilename() {
+    let filename = document.getElementById("filenameInput").value.trim();
+    if (!filename) {
+        alert("Please enter a valid filename!");
+        return;
+    }
+
+    // Ensure the filename ends with .json
+    if (!filename.endsWith(".json")) {
+        filename += ".json";
+    }
+
+    closeModal();
+    exportData(filename);
+}
+
+function exportData(filename) {
+    const jsonData = JSON.stringify(model, null, 4);
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 
 
-
-
-
-
-function exportData() {
 	
-    const jsonData = JSON.stringify(model, null, 4); // Beautify the JSON
+ /*   const jsonData = JSON.stringify(model, null, 4); // Beautify the JSON
     const blob = new Blob([jsonData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
@@ -968,8 +1174,36 @@ function exportData() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url); // Clean up to avoid memory leaks
-}
+	
+	*/
 
+/*	let defaultFilename = "heatload_standard.json";
+    
+    // Ask the user to input a filename
+    let filename = prompt("Enter file name:", defaultFilename);
+    if (!filename) return; // If the user cancels, do nothing
+
+    // Ensure the filename ends with .json
+    if (!filename.endsWith(".json")) {
+        filename += ".json";
+    }
+
+    // Convert data to JSON
+    const jsonData = JSON.stringify(model, null, 4);
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    // Trigger the download
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+	
+}
+*/
 function importData() {
     const fileInput = document.getElementById('fileInput');
     if (!fileInput.files.length) {
@@ -993,15 +1227,15 @@ function importData() {
                 model.wallElements = jsonData.wallElements;
                 model.wallInstances = jsonData.wallInstances;
 				model.otherData = jsonData.otherData;
+				model.zipCode = jsonData.zipCode
 
-                // Set counters to one more than the highest ID found in the imported data
                 model.spaceIdCounter = Math.max(...model.spaces.map(space => space.id)) + 1;
                 model.wallElementsIdCounter = Math.max(...model.wallElements.map(element => element.id)) + 1;
-                model.wallInstanceID = Math.max(...model.wallInstances.map(instance => instance.id)) + 1;
-
-				computeAll()
+				model.wallInstanceID = Math.max(0, ...model.wallInstances.map(instance => instance.id)) + 1;
+				model.computeAll()
 				renderAll()
-
+				console.log("compute and render")
+			
 
             } else {
                 throw new Error('Invalid data structure');
@@ -1026,25 +1260,16 @@ function handleMunicipalityChange(){
 }
 
 function handleHeatRecoveryCheckBox() {
-	
-	//update model
-    var checkbox = document.getElementById('heatRecoveryCheckbox');
-	model.otherData['heatrecovery']['checked']=checkbox.checked
 
-	//rendering (needed since the display changes with the checkbox
-	//renderHeatRecovery()
-	computeAll()
+    var checkbox = document.getElementById('heatRecoveryCheckbox');
+	model.changeHeatRecoveryEnabled(checkbox.checked)
 	renderAll()
 }
 
 function handleHeatRecoveryEfficiencyChange() {
 
-	// update model
     var efficiencyInput = document.getElementById('heatRecoveryEfficiency');
-	model.otherData['heatrecovery']['efficiency'] = efficiencyInput.value;
-
-	//heat recovery render not to adpat, but other items to be rendered later on
-	computeAll()
+	model.changeHeatRecoveryEfficiency(efficiencyInput.value);
 	renderAll()
 	
 }
@@ -1052,21 +1277,39 @@ function handleHeatRecoveryEfficiencyChange() {
 // Function to update the air tightness unit based on selected parameter
 function handleAirTightnessChange() {
 
-	//modify data
-	model.otherData['airtightness']['choice']=document.getElementById('airTightnessSelect').value
-	model.otherData['airtightness']['value'] = document.getElementById('at_value').value;
-	model.otherData['airtightness']['v50_refsurface'] = document.getElementById('at_ref_surface').value;
+	var choice = document.getElementById('airTightnessSelect').value
+	var value  = document.getElementById('at_value').value;
+	var surface = document.getElementById('at_ref_surface').value;
 
-	computeAll()
+	model.changeAirThightnessInputs(choice,value,surface)
 	renderAll()
 }
+
+function handleInertiaChange(e,rowData){
+	model.setInertia(e.target.value)
+	renderReheat()
+	renderResults()
+}
+
+function handleSetBackTimechange(e,rowData){
+	model.setSetbackPeriod(e.target.value)
+	renderReheat()
+	renderResults()
+}
+
+function handleSpaceReheatTimeChange(e,rowData){
+	model.setSpaceHeatUpTime(rowData.spaceid,e.target.value)
+	renderReheat()
+	renderResults()
+}
+
 
 
 
 // INIT FUNCTIONS 
 
 
-function createElement(tag, attributes = {}, innerText = '', children = []) {
+/*function createElement(tag, attributes = {}, innerText = '', children = []) {
     const element = document.createElement(tag);
 
     // Loop through attributes
@@ -1092,29 +1335,90 @@ function createElement(tag, attributes = {}, innerText = '', children = []) {
     children.forEach(child => element.appendChild(child));
 
     return element;
+}*/
+function createElement(tag, attributes = {}, innerText = '', children = [], tooltipKey = '') {
+    const element = document.createElement(tag);
+
+    // Loop through attributes
+    for (const [key, value] of Object.entries(attributes)) {
+        if (key === 'class') {
+            // Handle class attribute
+            element.className = value;
+        } else if (key.startsWith('on')) {
+            // Assign event handlers
+            element[key] = value;
+        } else {
+            // Assign other attributes
+            element.setAttribute(key, value);
+        }
+    }
+
+    // Set innerText if provided
+    if (innerText) {
+        element.innerText = innerText;
+    }
+
+    // Append children if any
+    children.forEach(child => element.appendChild(child));
+
+    // Add tooltip directly inside the element
+    if (tooltipKey) {
+        element.classList.add('tooltip'); // Ensure it has the tooltip styling
+
+        const tooltipSpan = document.createElement('span');
+        tooltipSpan.className = 'tooltiptext';
+        tooltipSpan.setAttribute('lang-key', tooltipKey);
+        tooltipSpan.innerText = translations[getCurrentLanguage()][tooltipKey]
+
+        element.appendChild(tooltipSpan);
+    }
+
+    return element;
 }
 
 
 
 function initializePage(container_id) {
     // Header
-    const header = createElement('h1', { 'lang-key': 'heat_loss_calculation' }, 'Calcul des déperditions thermiques');
+    //const header = createElement('h1', { 'lang-key': 'heat_loss_calculation' }, 'Calcul des déperditions thermiques');
 
     // Data Buttons Section
     const dataButtons = createElement('div', { class: 'data-buttons' }, '', [
-        createElement('button', { id: 'exportDataBtn' }, 'Export Data'),
-        createElement('button', { id: 'importDataBtn' }, 'Import Data'),
-        createElement('input', { id: 'fileInput', type: 'file', style: 'display: none;', onchange: () => importData(this), accept: '.json' })
+        createElement('button', { 'lang-key':'export', id: 'exportDataBtn' }, 'Export Data'),
+        createElement('button', { 'lang-key':'import', id: 'importDataBtn' }, 'Import Data'),
+        createElement('input', { id: 'fileInput', type: 'file', style: 'display: none;', onchange: () => importData(this), accept: '.json' }),
+		createElement('button', { 'lang-key':'save_as_pdf', id: 'printBtn' }, 'save_as_pdf'),
+
     ]);
 	
 
     // Tabs Container
-    const tabsContainer = createElement('div', { id: 'tabcontainer' }, '', [
+    const tabsContainer = createElement('div', { id: 'tabcontainer' , class:'sidebar' }, '', [
         createElement('div', { id: 'maintabs' }),
         createElement('div', { id: 'spacetabs' }),
         createElement('div', { id: 'resultstabs' })
     ]);
 
+	const contentContainer = createElement('div', {class: 'content'},'',
+		[createElement('h1', { 'lang-key': 'heat_loss_calculation' }, 'Calcul des déperditions thermiques')])
+	
+   // Spaces Section
+    const spaces = createElement('div', { id: 'spaces', class: 'main-section' }, '', [
+        createElement('h2', { 'lang-key': 'spaces' }, 'Espaces'),
+        createElement('button', { onclick: handleAddSpace ,class:'add-button'}, '+'),
+        createElement('table', { id: 'tableSpaces' }, '', [
+            createElement('tr', {}, '', [
+                createElement('th', { 'lang-key': 'space_name' }, 'Nom de l’espace'),
+                createElement('th', { 'lang-key': 'space_temperature' }, 'Température (°C)'),
+                createElement('th', { 'lang-key': 'floor_area' }, 'Surface au sol (m²)'),
+                createElement('th', { 'lang-key': 'inner_volume' }, 'Volume intérieur (m³)'),
+                createElement('th', { 'lang-key': 'heating_type' }, 'Type de chauffage'),
+                createElement('th', { }, '' )
+            ])
+        ])
+    ]);
+
+ 
     // Boundary Conditions Section
     const boundaryConditions = createElement('div', { id: 'boundaryconditions', class: 'main-section' }, '', [
         createElement('h2', { 'lang-key': 'boundaryconditions' }, 'Environnements extérieurs et voisins'),
@@ -1145,21 +1449,51 @@ function initializePage(container_id) {
         ])
     ]);
 
-    // Spaces Section
-    const spaces = createElement('div', { id: 'spaces', class: 'main-section' }, '', [
-        createElement('h2', { 'lang-key': 'spaces' }, 'Espaces'),
-        createElement('button', { onclick: handleAddSpace ,class:'add-button'}, '+'),
-        createElement('table', { id: 'tableSpaces' }, '', [
-            createElement('tr', {}, '', [
-                createElement('th', { 'lang-key': 'space_name' }, 'Nom de l’espace'),
-                createElement('th', { 'lang-key': 'space_temperature' }, 'Température (°C)'),
-                createElement('th', { 'lang-key': 'floor_area' }, 'Surface au sol (m²)'),
-                createElement('th', { 'lang-key': 'inner_volume' }, 'Volume intérieur (m³)'),
-                createElement('th', { 'lang-key': 'heating_type' }, 'Type de chauffage'),
-                createElement('th', { }, '' )
-            ])
-        ])
+  // Ventilation Section
+    const ventilation = createElement('div', { id: 'ventilation', class: 'main-section' }, '', [
+        createElement('h2', { 'lang-key': 'ventilation' }, 'Ventilation'),
+        createElement('h3', { 'lang-key': 'air_tightness' }, 'Etanchéité à l’air'),
+		createElement('select', { id: 'airTightnessSelect', onchange: handleAirTightnessChange }, '', [
+			createElement('option', { value: 'n50',selected: true }, 'n50'),
+			createElement('option', { value: 'v50' }, 'v50'),
+		//createElement('option', { value: 'Q50' }, 'Q50')
+		]),
+		createElement('p',  {} , '', [
+			createElement('input', { type: 'number', id: 'at_value', min: '1', max: '100', onchange: handleAirTightnessChange }),
+			createElement('span', { id: 'at_unit' }, 'at_unit')
+			]),
+		createElement('p', { id: 'at_ref_surface_div', style: 'display:none' }, '',[
+			createElement('span', {'lang-key':'at_ref_surface'}, ''),
+			createElement('input',{type:'number',id:'at_ref_surface',min: '0',onchange: handleAirTightnessChange}),
+			createElement('span', {}, 'm²'),
+		]),
+		
+
+        createElement('div', {}, '', [
+            createElement('h3', { 'lang-key': 'heat_recovery' }, 'Récupération de chaleur'),
+            createElement('p', {}, '', [ 
+				createElement('span', { 'lang-key': 'enable_hr' }, 'Enable Heat Recovery'),
+				createElement('input', { type: 'checkbox', id: 'heatRecoveryCheckbox', onchange: handleHeatRecoveryCheckBox }),
+				createElement('input', { type: 'number', id: 'heatRecoveryEfficiency', min: '0', max: '100', style: 'display: none;', placeholder: 'Rendement', onchange: handleHeatRecoveryEfficiencyChange }),
+				createElement('span', { id: 'hr_unit', style: 'display: none;' }, '%'),
+            ]),
+            createElement('p', {}, '', [ 
+				createElement('span', { 'lang-key': 'mean_extract_t', id: 'meanExtractTemperature_label', style: 'display: none;' }),
+				createElement('span', { id: 'meanExtractTemperature_value', style: 'display: none;', disabled: true }),
+				createElement('span', { id: 'meanExtractTemperature_warning','lang-key': 'extracttemperature_warning', style: 'display: none;'}),
+			]),
+            createElement('p', {}, '', [ 
+				createElement('span', { 'lang-key': 'supply_t', id: 'supplyTemperature_label', style: 'display: none;' }),
+				createElement('span', { id: 'supplyTemperature_value', style: 'display: none;', disabled: true }),
+			])
+		]),
+	   createElement('h3', { 'lang-key': 'flowrates' }, 'Débits'),
+     
+			//createElement("button",{ 'lang-key':'open_ventilation_assistant',onclick: openVentilationAssistant})
+			
+        
     ]);
+
 
     // Walls Section
     const walls = createElement('div', { id: 'wall_elements', class: 'main-section' }, '', [
@@ -1169,71 +1503,65 @@ function initializePage(container_id) {
             createElement('tr', {}, '', [
                 createElement('th', { 'lang-key': 'wall_name' }, 'Nom du wall'),
                 createElement('th', { 'lang-key': 'u_value' }, 'Valeur U'),
-                createElement('th', { 'lang-key': 'thermal_bridge_coefficient' }, 'Coefficient de pont thermique'),
+                createElement('th', { 'lang-key': 'thermal_bridge_coefficient' }, 'Coefficient de pont thermique',[],tooltipText='thermal_bridge_tooltip'),
                 createElement('th', {}, '')
             ])
         ])
     ]);
 
-    // Ventilation Section
-    const ventilation = createElement('div', { id: 'ventilation', class: 'main-section' }, '', [
-        createElement('h2', { 'lang-key': 'air_tightness' }, 'Etanchéité à l’air'),
-        createElement('select', { id: 'airTightnessSelect', onchange: handleAirTightnessChange }, '', [
-            createElement('option', { value: 'n50',selected: true }, 'n50'),
-            createElement('option', { value: 'v50' }, 'v50'),
-            //createElement('option', { value: 'Q50' }, 'Q50')
-        ]),
-        createElement('input', { type: 'number', id: 'at_value', min: '1', max: '100', onchange: handleAirTightnessChange }),
-        createElement('span', { id: 'at_unit' }, 'at_unit'),
-		createElement('div', { id: 'at_ref_surface_div', style: 'display:none' }, '',[
-			createElement('span', {'lang-key':'at_ref_surface'}, ''),
-			createElement('input',{type:'number',id:'at_ref_surface',min: '0',onchange: handleAirTightnessChange}),
-			createElement('span', {}, 'm²'),
-		]),
-		
-
-
-        createElement('div', {}, '', [
-            createElement('h2', { 'lang-key': 'heat_recovery' }, 'Récupération de chaleur'),
-            createElement('span', { 'lang-key': 'enable_hr' }, 'Enable Heat Recovery'),
-            createElement('input', { type: 'checkbox', id: 'heatRecoveryCheckbox', onchange: handleHeatRecoveryCheckBox }),
-            createElement('input', { type: 'number', id: 'heatRecoveryEfficiency', min: '0', max: '100', style: 'display: none;', placeholder: 'Rendement', onchange: handleHeatRecoveryEfficiencyChange }),
-            createElement('span', { id: 'hr_unit', style: 'display: none;' }, '%'),
-            createElement('p'),
-            createElement('span', { 'lang-key': 'mean_extract_t', id: 'meanExtractTemperature_label', style: 'display: none;' }),
-            createElement('span', { id: 'meanExtractTemperature_value', style: 'display: none;', disabled: true }),
-            createElement('span', { id: 'meanExtractTemperature_warning','lang-key': 'extracttemperature_warning', style: 'display: none;'}),
-            createElement('p'),
-            createElement('span', { 'lang-key': 'supply_t', id: 'supplyTemperature_label', style: 'display: none;' }),
-            createElement('span', { id: 'supplyTemperature_value', style: 'display: none;', disabled: true })
-        ])
-    ]);
-
+  
     // Main Containers
-    const spacesContainer = createElement('div', { id: 'spacesContainer' });
-    const resultsContainer = createElement('div', { id: 'resultsContainer', class: 'main-section' });
+    const spacesContainer = createElement('div', { id: 'spacesContainer', class: 'main-section' });
+
+    const reheatContainer = createElement('div', { id: 'reheatdiv', class: 'main-section' }, '',[
+		createElement('h2',{'lang-key':'reheatdiv'},''),
+		createElement('h3',{'lang-key':'inertia'},'inertia'),
+		createElement('select', { id: 'inertia-select', onchange: handleInertiaChange }, '', [
+            createElement('option', { 'lang-key':'light',value: 'light'},'light'),
+            createElement('option', { 'lang-key':'heavy',value: 'heavy' }, 'heavy')
+			]),
+		createElement('h3',{'lang-key':'setback_time'},'setback_time'),
+		createElement('select', { id: 'setback-select', onchange: handleSetBackTimechange }, '-', [
+            createElement('option', { value: '-'},'-'),
+            createElement('option', { value: '8' }, '8h'),
+            createElement('option', { value: '14' }, '14h'),
+            createElement('option', { value: '62' }, '62h')
+			]),
+		createElement('h3',{'lang-key':'reheat_table_title'},'reheat_table_title'),
+		createElement('table',{'id':'reheat_table'},''),
+
+		]);
 
 
+
+    const resultsContainer = createElement('div', { id: 'results', class: 'main-section' });
+
+	contentContainer.append(        
+		spaces,
+        boundaryConditions,
+        ventilation,
+		walls,
+        spacesContainer,
+        reheatContainer,
+        resultsContainer
+)
 
 
     // Append all sections to the body
     document.getElementById(container_id).append(
-        header,
+        //header,
         dataButtons,
         tabsContainer,
-        boundaryConditions,
-        spaces,
-        walls,
-        ventilation,
-        spacesContainer,
-        resultsContainer
+		contentContainer
     );
-	document.getElementById('exportDataBtn').addEventListener('click', exportData);
+	document.getElementById('exportDataBtn').addEventListener('click', openFilenameModal);
 	document.getElementById('importDataBtn').addEventListener('click', function() {
     document.getElementById('fileInput').click(); // Trigger the hidden file input click
 	});	
+	document.getElementById('printBtn').addEventListener('click',exportPageToPDF)
 
 }
+
 
 
 

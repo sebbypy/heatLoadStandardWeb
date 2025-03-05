@@ -9,8 +9,21 @@
 	<script src="weather.js"></script>
 	<script src="functions.js"></script>
 	<script src="solveLinearSystem.js"></script>
+	<script src="multiselect.js"></script>
+	<script src="renderTable.js"></script>
+	<script src="ventilationAssistant.js"></script>
+	<script src="icons.js"></script>
+	<script src="export.js"></script>
+	
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 	<link rel="stylesheet" href="style.css">
+	
+	<!-- Include jsPDF and autoTable -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+	
 	<script>
 	</script>
 
@@ -42,6 +55,16 @@
 	//model.createNewBoundary('Ext',bc_type='outside')
 	initializePage("main_container")
 	addOutsideBoundary()
+
+	model.createNewWallElement("Mur ext",0.24,0.02)
+	model.createNewWallElement("Toit",0.24,0.02)
+	model.createNewWallElement("Menuiseries DV",1.5,0.0)
+
+	//model.createNewSpace("space")
+
+	//var vModel = new VentilationModel(model);
+	//vModel.setSpaces(model.spaces);
+	
 
 	renderAll()
 	toggleVisibility('spaces')
