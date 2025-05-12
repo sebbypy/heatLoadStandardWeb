@@ -45,7 +45,6 @@ function addOutsideBoundary() {
 
 function handleSpacePropertyChange(spaceId, property, value) {
 	model.changeSpaceProperty(spaceId,property,value)	
-	//model.computeAll()
 	renderAll()
 
 }
@@ -60,10 +59,50 @@ function handleSpaceNameChange(id, newName) {
 
 
 function handleVentilationChange(spaceId, parameter, value){
-	model.changeVentilationProperty(spaceId,parameter,value)
+	model.changeVentilationProperty(spaceId,parameter,parseFloat(value))
 	renderAll()
 }
 
+
+function handleAddTransfer(){
+	model.createTransferFlow(1,1,0)
+	renderAll()
+}
+
+function handleDeleteTransfer(transferid){
+	model.deleteTransferFlow(transferid)
+	renderAll()
+}
+
+
+
+function handleDetailledTransferCheckboxChange(event){
+	// show/hide detailled transfer table
+	// freeze/unfreeze transfer and temperature inputs in ventilation table
+
+	showHideTransfer(event.target.checked)
+	
+	if (event.target.checked){
+		model.airTransfers.transferFlowCalculation = 'detailled'
+	}
+	else{
+		model.airTransfers.transferFlowCalculation = 'manual'
+	}		
+	model.computeAll()
+	renderAll()
+		
+}
+
+function handleTransferChange(transferid){
+	//changeTransferFlow(transferFlowId,fromSpaceId,toSpaceId,flowrate){
+	fromElement = document.getElementById("transfer"+transferid+"-from")
+	toElement = document.getElementById("transfer"+transferid+"-to")
+	flowrateElement = document.getElementById("transfer"+transferid+"-flowrate")
+
+	model.changeTransferFlow(transferid,Number(fromElement.value),Number(toElement.value),Number(flowrateElement.value))
+	model.computeAll()
+	renderAll()
+}
 
 
 // WALL / Wall elements
@@ -172,6 +211,7 @@ function renderAll(){
 	renderAirTightness()
 	renderHeatRecovery()
 	renderVentilationTable()
+	renderTransferFlowsTable()
 	renderReheat()
 	renderResults()
 	
@@ -444,7 +484,7 @@ function renderReheat(){
 	model.spaces.forEach( space =>{
 		
 		if (space.type == "heated"){
-			console.log(space)
+			//console.log(space)
 			var row = {	spaceName:space.name,
 						spaceid: space.id,
 						reheatTime: space.heat_up_time,
@@ -539,14 +579,14 @@ function renderWallInstances() {
 
 		if (space.type == "heated"){
 
-			var spaceTotalLoss = 0;
+			//var spaceTotalLoss = 0;
 			var spaceTotalSurface = 0;
 
 			var spaceDiv = document.createElement('div');
 			spaceDiv.className = 'space-section';
 			spaceDiv.id = `space-${index}`;
 			spaceDiv.style.display = 'none'; // Start with the table hidden
-			console.log(spaceDiv)
+			//console.log(spaceDiv)
 
 
 			header = document.createElement("h3")
@@ -584,7 +624,7 @@ function renderWallInstances() {
 						const linkedSpace = model.spaces.find(e => e.id === linkedSpaceId);
 
 						const multiplier = wall.spaces.indexOf(space.id) === 0 ? 1 : -1;
-						spaceTotalLoss += multiplier * wall.transmissionLoss;
+						//spaceTotalLoss += multiplier * wall.transmissionLoss;
 						spaceTotalSurface += wall.Area;
 
 						// Wall Element Type Dropdown
@@ -663,7 +703,7 @@ function renderWallInstances() {
 			const totalRow = document.createElement('tr');
 			totalRow.classList.add('total-row');
 
-			['Total', '', spaceTotalSurface.toFixed(1), spaceTotalLoss.toFixed(0), ''].forEach((text, i) => {
+			['Total', '', spaceTotalSurface.toFixed(1), space.transmission_heat_loss.toFixed(0), ''].forEach((text, i) => {
 				const cell = document.createElement(i === 2 || i === 3 ? 'td' : 'td');
 				cell.textContent = text;
 				totalRow.appendChild(cell);
@@ -672,7 +712,7 @@ function renderWallInstances() {
 			table.appendChild(totalRow);
 			
 			container.appendChild(spaceDiv);
-			space.transmission_heat_loss = spaceTotalLoss
+			//space.transmission_heat_loss = spaceTotalLoss
 		
 		}
 		
@@ -698,14 +738,14 @@ function renderVentilationTable() {
         "mechanical_supply_flowrate",
         "transfer_flowrate",
         "transfer_temperature",
-        "mechanical_extract_flowrate"
+        "mechanical_extract_flowrate",
     ];
 	var ventilation_tooltips = {
 		"natural_supply_flowrate": "natural_supply_tooltip",
 		"mechanical_supply_flowrate": null,
 		"transfer_flowrate": "transfer_flow_tooltip",
 		"transfer_temperature": null,
-		"mechanical_extract_flowrate": null
+		"mechanical_extract_flowrate": null,
 	}
 
 
@@ -726,6 +766,13 @@ function renderVentilationTable() {
         headerRow.appendChild(th);*/
     });
 	
+	if (model.airTransfers.transferFlowCalculation == "detailled"){
+		var th = document.createElement('th');
+		th.setAttribute('lang-key', 'flow_balance');
+		th.textContent = translate("flow_balance");
+		headerRow.appendChild(th);
+	}
+		
 	var th = document.createElement('th');
 	th.setAttribute('lang-key', 'ventilation_loss');
 	th.textContent = translations[getCurrentLanguage()]["ventilation_loss"];
@@ -742,6 +789,7 @@ function renderVentilationTable() {
 		transfer_temperature: null,
 		mechanical_extract_flowrate: 0,
 		transfer_temperature:null,
+		balance:null,
 		loss:0
 	};
 
@@ -758,8 +806,9 @@ function renderVentilationTable() {
 			parameters.forEach(param => {
 				var cell = document.createElement('td');
 				var input = document.createElement('input');
+				input.id = 'space'+space.id+'-'+param
 				input.type = 'number';
-				input.value = space.ventilation[param] || '';
+				input.value = space.ventilation[param].toFixed(0) || '';
 				input.onchange = () => handleVentilationChange(space.id, param, input.value);
 				cell.appendChild(input);
 				row.appendChild(cell);
@@ -771,14 +820,17 @@ function renderVentilationTable() {
                 }
 			});
 
+
+			if (model.airTransfers.transferFlowCalculation == "detailled"){
+				var cell = document.createElement('td')
+				cell.innerHTML = space.ventilation.balance.toFixed(0)
+				cell.name = "balance"+space.id
+				row.appendChild(cell);
+			}
+
 			var cell = document.createElement('td');
-			//var input = document.createElement('span');
-			//input.type = 'text';
-			//input.value = space.ventilation.ventilation_loss.toFixed(0);
-			//input.disabled = true; // Make the input read-only
 			cell.innerHTML = space.ventilation.ventilation_loss.toFixed(0)
 			cell.name = "ventilationLoss"+space.id
-			//cell.appendChild(input);
 			row.appendChild(cell);
 			totals['loss'] += space.ventilation.ventilation_loss
 			
@@ -792,6 +844,11 @@ function renderVentilationTable() {
 	totalRow.classList.add('total-row');
     totalRow.innerHTML = '<td lang-key="total">' + translations[getCurrentLanguage()]["total"] + '</td>';
     Object.keys(totals).forEach(key => {
+		
+		if ( (key == 'balance') && (model.airTransfers.transferFlowCalculation != "detailled")){
+			return
+		}
+		
         var totalCell = document.createElement('td');
 		if (totals[key] != null) {
 			totalCell.textContent = totals[key].toFixed(0); // Display totals rounded to integers
@@ -809,6 +866,116 @@ function renderVentilationTable() {
 
     table.appendChild(totalRow);
 }
+
+function renderTransferFlowsTable() {
+
+
+	var ventilationdiv = document.getElementById('ventilation')
+	
+	var transferdiv = document.getElementById("transferdiv")
+	
+	if (!transferdiv){
+	
+		ventilationdiv.appendChild(createElement('div',{},'',[
+			createElement('span', {'lang-key':'detailled_transfer_input'}, 'detailled_transfer'),
+			createElement('input', { 'id':'detailled_transfer_checkbox','type': 'checkbox', onchange: handleDetailledTransferCheckboxChange }, 'detailled_transfer')
+			]))
+	
+		ventilationdiv.appendChild(createElement('div',{'id':'transferdiv'},'',[
+			createElement('h3', { 'lang-key': 'transfer_flows' }, 'transfer_flows'),
+			createElement('br',{},''),
+			createElement('button', { onclick: ()=> handleAddTransfer() ,class:'add-button'}, '+'),
+			createElement('table',{'id':'transferFlowsTable'},'',[
+				createElement('tr', {}, '', [
+					createElement('th', { 'lang-key': 'from_space' }, 'from'),
+					createElement('th', { 'lang-key': 'to_space' }, 'to'),
+					createElement('th', { 'lang-key': 'flowrate' }, 'flowrate'),
+					createElement('th', {},'')]
+				)]
+			)]
+		))
+	}
+	
+	var table = document.getElementById('transferFlowsTable');
+	while (table.rows.length > 1) {
+        table.deleteRow(1);
+    }
+	
+	
+	model.airTransfers.transferFlows.forEach(transfer => {
+		table.appendChild(	
+			createElement('tr', {}, '', [
+				createElement('td', {}, '', [ createElement('select', {'id':'transfer'+transfer.id+"-from"}, '', model.spaces.filter(space => space.type === 'heated').map(space => createElement('option', {'value':space.id}, space.name))) ]),
+				createElement('td', {}, '', [ createElement('select', {'id':'transfer'+transfer.id+"-to"}, '', model.spaces.filter(space => space.type === 'heated').map(space => createElement('option', {'value':space.id}, space.name))) ]),
+				createElement('td', {}, '', [createElement('input', {'id':'transfer'+transfer.id+"-flowrate", type: 'number', min: '0' })]),
+				createElement('td', {}, '', [createElement('button',{onclick: () => {handleDeleteTransfer(transfer.id)}},'',[createElement('i',{class:'material-icons'},'delete')])])
+				
+			])
+		)
+		
+		//getting UI elemments
+		fromElement = document.getElementById("transfer"+transfer.id+"-from")
+		toElement = document.getElementById("transfer"+transfer.id+"-to")
+		flowrateElement = document.getElementById("transfer"+transfer.id+"-flowrate")
+
+		// setting actual values
+		fromElement.value = transfer.from;
+		toElement.value = transfer.to;
+		flowrateElement.value = transfer.flowrate;
+
+		// setting change listeners
+		fromElement.addEventListener("change",(event) => {handleTransferChange(transfer.id)});
+		toElement.addEventListener("change",(event) => {handleTransferChange(transfer.id)});
+		flowrateElement.addEventListener("change",(event) => {handleTransferChange(transfer.id)});
+	
+	})
+
+
+	if (model.airTransfers.transferFlowCalculation == 'detailled'){
+		document.getElementById('detailled_transfer_checkbox').checked=true
+		showHideTransfer(true)
+	}
+	else{
+		document.getElementById('detailled_transfer_checkbox').checked=false
+		showHideTransfer(false)
+	}
+	
+	
+}
+
+
+function showHideTransfer(show){
+	
+	
+	model.spaces.forEach( space => {
+		
+		if (space.type == 'heated'){
+		
+			transfer_flowrate = document.getElementById('space'+space.id+'-transfer_flowrate')
+			transfer_temperature = document.getElementById('space'+space.id+'-transfer_temperature')
+		
+			if (show == true){
+				transfer_flowrate.disabled = true
+				transfer_temperature.disabled = true
+			}
+			else{
+				transfer_flowrate.disabled = false
+				transfer_temperature.disabled = false	
+			}
+		}
+	})
+	
+	if (show == false){
+		document.getElementById('transferdiv').style.display = 'none'
+	}
+	else{
+		document.getElementById('transferdiv').style.display = 'block'
+	}
+
+
+}
+
+
 
 
 
@@ -934,7 +1101,7 @@ function renderAirTightness(){
 
 function toggleVisibility(input) {
 	
-	console.log("toggle ",input)
+	//console.log("toggle ",input)
 	
     var mainsections = document.querySelectorAll('.main-section');
     var spacessections = document.querySelectorAll('.space-section');
@@ -1226,17 +1393,20 @@ function importData() {
                 model.spaces = jsonData.spaces;
                 model.wallElements = jsonData.wallElements;
                 model.wallInstances = jsonData.wallInstances;
-				model.otherData = jsonData.otherData;
+				//model.otherData = jsonData.otherData;
+				
+				model.otherData = deepMergeDefaults(model.otherData,jsonData.otherData);
 				model.zipCode = jsonData.zipCode
+				model.airTransfers = jsonData.airTransfers
 
                 model.spaceIdCounter = Math.max(...model.spaces.map(space => space.id)) + 1;
                 model.wallElementsIdCounter = Math.max(...model.wallElements.map(element => element.id)) + 1;
 				model.wallInstanceID = Math.max(0, ...model.wallInstances.map(instance => instance.id)) + 1;
+				
 				model.computeAll()
 				renderAll()
 				console.log("compute and render")
-			
-
+	
             } else {
                 throw new Error('Invalid data structure');
             }
@@ -1250,6 +1420,25 @@ function importData() {
 
     reader.readAsText(file);
 }
+
+function deepMergeDefaults(defaultObj, savedData) {
+  const result = structuredClone(defaultObj);
+  for (const key in savedData) {
+	  //console.log(key)
+    if (
+      savedData[key] &&
+      typeof savedData[key] === "object" &&
+      !Array.isArray(savedData[key])
+    ) {
+      result[key] = deepMergeDefaults(defaultObj[key] || {}, savedData[key]);
+    } else {
+      result[key] = savedData[key];
+    }
+  }
+  return result;
+}
+
+
 
 
 function handleMunicipalityChange(){

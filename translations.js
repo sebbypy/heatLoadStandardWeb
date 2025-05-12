@@ -156,7 +156,13 @@ var translations = {
 		"no":"Non",
 		"extracttemperature_warning":" Pas d'air extrait - impossible de calculer cette température",
 		"flowrates":"Débits de ventilation",
-		"save_as_pdf":"Exporter en PDF"
+		"save_as_pdf":"Exporter en PDF",
+		"transfer_flows":"Débits de transfert",
+		"detailled_transfer_input":"Introduire les transferts d'air de manière détaillée",
+		"from_space":"Depuis",
+		"to_space":"Vers",
+		"flowrate":"Débit (m³/h)",
+		"flow_balance":"Déséquilibre (m³/h)"
 
     },
 	'nl': {

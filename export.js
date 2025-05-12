@@ -2,6 +2,8 @@ async function exportPageToPDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
 
+	pdf.setFont("helvetica")
+
     const pageWidth = 180; // Max width for text (A4 = 210mm, with margins)
     const pageHeight = 280; // A4 page height (297mm, leaving bottom margin)
     let yPosition = 60; // Start Y position for content
@@ -25,15 +27,18 @@ async function exportPageToPDF() {
 		}        
 		if (["H1", "H2", "H3"].includes(element.tagName)) {
 			blackText(pdf)
+			pdf.setFont("helvetica","bold")
 
             yPosition = checkNewPage(pdf,yPosition,pageHeight)
 			
-			sizes = {"H1":24,"H2":18,"H3":14}
+			sizes = {"H1":20,"H2":16,"H3":12}
 			
             pdf.setFontSize(sizes[element.tagName]);
             //pdf.setFontSize(element.tagName === "H3" ? 24 : 18);
             pdf.text(element.innerText, 15, yPosition);
             yPosition += 10;
+			pdf.setFont("helvetica","normal")
+
         } 
 		
         else if (element.tagName === "TABLE") {
@@ -76,7 +81,7 @@ async function exportPageToPDF() {
 										.map(node => node.textContent.trim()) // Clean up spaces
 										.join(" "); // Join multiple text nodes (if any)
 						rowData.push(cellText);
-						if (rowIndex > 0) rowColors.push([0, 0, 0]); // Black for regular text
+						if (rowIndex > 0) rowColors.push([78,99, 109]); // Black for regular text
 					}
 				});
 
@@ -125,13 +130,13 @@ async function exportPageToPDF() {
 
 			yPosition = checkNewPage(pdf,yPosition,pageHeight)
 
-            pdf.setFontSize(12);
+            pdf.setFontSize(10);
             pdf.text(`${selectedText}`, 15, yPosition);
             yPosition += 10;
         }
 		
 		else if (element.tagName === "P"){
-            pdf.setFontSize(12);
+            pdf.setFontSize(10);
 
 			var lastX = 15
 			yPosition = checkNewPage(pdf,yPosition,pageHeight)
@@ -142,8 +147,13 @@ async function exportPageToPDF() {
 			
 			subElements.forEach(subel => {
 				
+				if (window.getComputedStyle(subel).display === "none") {
+					return; // Skip this iteration
+				}        
+
+				
 				if (subel.tagName === "SPAN"){
-					pdf.setTextColor(0, 0, 0); 
+					blackText(pdf)
 					textToWrite = subel.innerText
 
 				}
@@ -189,7 +199,7 @@ function highlightText(pdf){
 
 function blackText(pdf){
 
-	pdf.setTextColor(0, 0, 0); // Blue
+	pdf.setTextColor(78, 99, 109); // Blue
 }
 
 

@@ -16,7 +16,7 @@ class DataModel {
             },
             'airtightness': {
                 'choice': "n50",
-                'value': 0,
+                'value': 6,
                 'v50_refsurface': 0
             },
 			'reheat':{
@@ -25,6 +25,11 @@ class DataModel {
 			}
         };
         this.zipCode = 1000
+		this.airTransfers = {
+			'transferFlows' : [],
+			'transferFlowCalculation':'detailled',
+			'transferCounter': 0,
+		}
 		this.subscribers = {}
 
     }
@@ -47,7 +52,8 @@ class DataModel {
                 "mechanical_extract_flowrate": 0,
                 "infiltration_flowrate": 0,
                 "extra_infiltration_flowrate": 0,
-                "ventilation_loss": 0
+                "ventilation_loss": 0,
+				"balance":0
             },
 			heat_up_time:null,
 			reheat_power: 0
@@ -84,7 +90,7 @@ class DataModel {
 	}
 
 	changeSpaceProperty(spaceId, property, value){
-		
+		console.log("change space property")
 	    const space = this.spaces.find(space => space.id === spaceId);
 		if (space) {
 			space[property] = isNaN(Number(value)) ? value : Number(value);
@@ -126,7 +132,7 @@ class DataModel {
             transmissionLoss: 0 // Initialize with zero transmission loss
         };
         this.wallInstances.push(newWallInstance);
-        console.log(this.wallInstances)
+        //console.log(this.wallInstances)
     }
 
     createNewWallElement(name, uvalue = 0, bridge = 0) {
@@ -221,7 +227,7 @@ class DataModel {
 	}
 
 	deleteWallInstance(wallInstanceId){
-		this.wallInstances = this.wallInstances.filter(wall => wall.id !== wallId);
+		this.wallInstances = this.wallInstances.filter(wall => wall.id !== wallInstanceId);
 		this.computeAll()
 	}
 
@@ -250,15 +256,123 @@ class DataModel {
         this.wallInstances.forEach(wallInstance => {
             this.computeWallInstanceLoss(wallInstance)
         });
-    }
+		
+		this.spaces.forEach((space, index) => {
+			var spaceTotalLoss = 0
+			var spaceTotalSurface = 0
+			if (space.type == "heated"){
+				this.wallInstances
+					.filter(wall => wall.spaces.includes(space.id))
+					.forEach(wall => {
+						const linkedSpaceId = wall.spaces.find(id => id !== space.id);
+						const linkedSpace = model.spaces.find(e => e.id === linkedSpaceId);
 
+						const multiplier = wall.spaces.indexOf(space.id) === 0 ? 1 : -1;
+						spaceTotalLoss += multiplier * wall.transmissionLoss;
+						spaceTotalSurface += wall.Area;
+					})
+				space.transmission_heat_loss = spaceTotalLoss
+		
+			}
+			
+
+		
+    })
+	}
+
+	createTransferFlow(fromSpaceId,toSpaceId,flowrate){
+		
+		this.airTransfers.transferCounter += 1
+		this.airTransfers.transferFlows.push({"id":this.airTransfers.transferCounter,"from":fromSpaceId,"to":toSpaceId,"flowrate":flowrate})
+		this.computeTransferProperties()
+		this.computeFlowBalance()
+
+	}		
+
+	deleteTransferFlow(transferFlowId){
+		this.airTransfers.transferFlows = this.airTransfers.transferFlows.filter(transferFlow => transferFlow.id !== transferFlowId);
+		this.computeTransferProperties()
+		this.computeFlowBalance()		
+		this.computeAll()
+	}
+
+	changeTransferFlow(transferFlowId,fromSpaceId,toSpaceId,flowrate){
+		var transferFlow = this.airTransfers.transferFlows.find(e => e.id == transferFlowId)
+		if (transferFlow){
+			console.log("change transfer")
+			transferFlow.from = fromSpaceId
+			transferFlow.to = toSpaceId
+			transferFlow.flowrate = flowrate
+		}
+		this.computeTransferProperties()
+		this.computeFlowBalance()
+		this.computeAll()
+	}
+	
+	computeTransferProperties(){
+
+		if (this.airTransfers.transferFlowCalculation != 'detailled'){
+			return
+		}
+
+		//console.log("compute transfer properties")
+		this.spaces.forEach((space, index) => {
+			
+			if (space.type == "heated"){
+
+				var transferTemperature=0
+				const incomingFlows = this.airTransfers.transferFlows.filter(flow => flow.to === space.id);
+				const totalFlow = incomingFlows.reduce((sum, flow) => sum + flow.flowrate, 0);
+
+				if (totalFlow === 0) transferTemperature=0; // Avoid division by zero
+
+				const weightedSum = incomingFlows.reduce((sum, flow) => {
+					const fromSpace = this.getSpace(flow.from);
+					return sum + flow.flowrate * fromSpace.temperature;
+				}, 0);
+
+				transferTemperature = weightedSum / totalFlow;
+				
+				space.ventilation.transfer_flowrate = totalFlow
+				space.ventilation.transfer_temperature = Number.isNaN(transferTemperature) ? space.temperature:transferTemperature
+			}
+		
+		})
+		
+	}
+		
+	computeFlowBalance(){
+		this.spaces.forEach((space,index) => {
+			if (space.type == "heated"){
+
+				//console.log(space)
+				//console.log(this.airTransfers.transferFlows)
+				const incomingTransferFlows = this.airTransfers.transferFlows.filter(flow => flow.to === space.id);
+				const outgoingTransferFlows = this.airTransfers.transferFlows.filter(flow => flow.from === space.id);
+				//console.log(incomingTransferFlows)
+				var balance = incomingTransferFlows.reduce((accumulator, currentValue) => { return accumulator + currentValue.flowrate},0)
+				//console.log(balance)
+				balance += -1*outgoingTransferFlows.reduce((accumulator, currentValue) => { return accumulator + currentValue.flowrate},0)
+				balance += space.ventilation.mechanical_supply_flowrate
+				balance += -1*space.ventilation.mechanical_extract_flowrate
+				balance += space.ventilation.natural_supply_flowrate
+			
+				space.ventilation.balance = balance
+			}
+
+		})
+		
+	}
+	
 
 	changeVentilationProperty(spaceId, property, value){
 		var space = this.spaces.find(e => e.id === spaceId);
 		if (space) {
 			space.ventilation[property] = value;
 			this.computeAll()
+			this.computeFlowBalance()
 		}
+		
 	}
 
 	changeHeatRecoveryEnabled(value){
@@ -528,6 +642,7 @@ class DataModel {
     }
 
 	setInertia(value) {
+		console.log("in set inertia")
 		if (value === "heavy" || value === "light") {
 			this.otherData.reheat.inertia = value;
 		} else {
@@ -557,7 +672,7 @@ class DataModel {
 	}
 
 	getInertia() {
-    return this.otherData.reheat.inertia;
+		return this.otherData.reheat.inertia;
 	}
 
 	getSetbackPeriod() {
@@ -591,7 +706,7 @@ class DataModel {
 		const setbackPeriod = this.getSetbackPeriod(); // 8, 14, 62, or 168
 		const heatUpTime = this.getSpaceHeatUpTime(spaceid); // Numerical value
 		
-		console.log("heatupTime",heatUpTime)
+		//console.log("heatupTime",heatUpTime)
 
 		// Validate retrieved values
 		if (!preheatData[setbackPeriod]) {
@@ -631,7 +746,6 @@ class DataModel {
             var Tout = this.getTout()
 
             var unheatedSpaces = this.getUnheatedSpaces()
-            console.log(unheatedSpaces)
 
             var nu = unheatedSpaces.length
 
@@ -742,12 +856,14 @@ class DataModel {
     }
 
 	computeAll(){
-		
+		console.log("compute all")
 		this.computeEquilibriumTemperatures()
 		this.computeExtractMeanTemperature()
 		this.computeSupplyTemperature()
+		this.computeTransferProperties()
 		this.computeAllWallInstanceLosses()
 		this.computeAllVentilationLosses()
+		this.computeReheat()
 		
 		this.notifySubscribers("heaload_changed",this)	
 		
@@ -892,13 +1008,13 @@ class VentilationModel {
         mainModel.subscribe("spaces", (mainModel) => {
             this.setSpaces(mainModel.spaces);
             this.computeMinimumFlows(mainModel);
+			//this.computeTransferProperties();
         });
     }
 
     setSystemType(type) {
-		console.log(type)
         if (!["A","B","C","D"].includes(type)) {
-            console.log("not ok");
+            //console.log("not ok");
             return;
         }
 
@@ -975,7 +1091,7 @@ class VentilationModel {
 
     setSpaceType(spaceid, spaceType) {
         if (!this.getPossibleSpaceTypes().includes(spaceType)) {
-            console.log("Invalid space type");
+            //console.log("Invalid space type");
             return;
         }
         this.spaces[spaceid].spaceType = spaceType;
@@ -1028,8 +1144,8 @@ class VentilationModel {
     }
 
     applyMinimumFlows(mainModel) {
-		console.log("apply min flow")
-		console.log("main mode",mainModel)
+		//console.log("apply min flow")
+		//console.log("main mode",mainModel)
         mainModel.spaces.forEach(space => {
 
             if (space.type == "heated") {
@@ -1039,7 +1155,7 @@ class VentilationModel {
 					space.ventilation.mechanical_extract_flowrate = this.spaces[spaceid].minExtract;
 				}
 				if (this.systemType === 'D') {
-					console.log("in D")
+					//console.log("in D")
 					space.ventilation.mechanical_supply_flowrate = this.spaces[spaceid].minSupply;
 					space.ventilation.mechanical_extract_flowrate = this.spaces[spaceid].minExtract;
 				}
@@ -1091,10 +1207,26 @@ function createTestModel() {
 	
 	model.changeSpaceProperty(3,'floorarea',30)
 
-	console.log(model.getReheatPower(1))
+
+	model.changeSpaceProperty(0,'temperature',21)
+	model.changeSpaceProperty(1,'temperature',22)
+	model.changeSpaceProperty(2,'temperature',23)
+	model.changeSpaceProperty(3,'temperature',24)
 	
-	model.computeReheat()
-	console.log(model)
+
+	model.createTransferFlow(0,1,55)
+	model.createTransferFlow(1,2,56)
+	model.createTransferFlow(0,2,44)
+	model.createTransferFlow(2,0,57)
+
+	model.changeTransferFlow(1,0,1,75)
+	model.computeTransferProperties()
+
+	//console.log(model.getReheatPower(1))
+	
+	//model.computeReheat()
+	model.spaces.forEach(space => {console.log(space)})
+	console.log(model.transferFlows)
 	
 	return model
 
