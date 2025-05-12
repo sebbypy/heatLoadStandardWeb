@@ -114,6 +114,10 @@ margin:0px;
 
 }
 
+.main-menu-text{
+	padding-left:15px;
+}
+
 .sidebar button{
 	display:flex;
     width: 100%;
@@ -125,9 +129,9 @@ margin:0px;
 	margin-top:10px;
 }
 
-.material-icons{
-	width:50px;
-	font-size:30px;
+.material-symbols{
+	/*width:50px ; */
+	font-size:40px;
 }
 
 .sidebar a {

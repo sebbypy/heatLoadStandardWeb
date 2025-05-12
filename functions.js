@@ -239,7 +239,7 @@ function renderSpaceRow(table, space) {
 
     const cell = row.insertCell(5)
     const button = document.createElement('button');
-    button.innerHTML = '<i class="material-icons">delete</i>'
+    button.innerHTML = '<i class="material-symbols">delete</i>'
 	button.onclick = () => handleDeleteSpace(space.id);
 	cell.appendChild(button)
 
@@ -301,7 +301,7 @@ function renderBoundaryRow(table, space, index) {
 	else{
 		const cell = row.insertCell(3)
 		const button = document.createElement('button');
-		button.innerHTML = '<i class="material-icons">delete</i>'
+		button.innerHTML = '<i class="material-symbols">delete</i>'
 		button.onclick = () => handleDeleteSpace(space.id);
 		cell.appendChild(button)
 
@@ -439,7 +439,7 @@ function renderWallElementRow(table, wElement) {
     //row.insertCell(3).innerHTML = `<button onclick="handleDeleteWallElement(${wElement.id})">Delete</button>`;
 	const cell = row.insertCell(3)
     const button = document.createElement('button');
-    button.innerHTML = '<i class="material-icons">delete</i>'
+    button.innerHTML = '<i class="material-symbols">delete</i>'
 	button.onclick = () => handleDeleteWallElement(wElement.id);
 	cell.appendChild(button)
 
@@ -686,7 +686,7 @@ function renderWallInstances() {
 						// Delete Button
 						const actionsCell = document.createElement('td');
 						const deleteButton = document.createElement('button');
-						deleteButton.innerHTML = '<i class="material-icons">delete</i>'
+						deleteButton.innerHTML = '<i class="material-symbols">delete</i>'
 
 
 						deleteButton.onclick = () => handleDeleteWallInstance(wall.id, index);
@@ -908,7 +908,7 @@ function renderTransferFlowsTable() {
 				createElement('td', {}, '', [ createElement('select', {'id':'transfer'+transfer.id+"-from"}, '', model.spaces.filter(space => space.type === 'heated').map(space => createElement('option', {'value':space.id}, space.name))) ]),
 				createElement('td', {}, '', [ createElement('select', {'id':'transfer'+transfer.id+"-to"}, '', model.spaces.filter(space => space.type === 'heated').map(space => createElement('option', {'value':space.id}, space.name))) ]),
 				createElement('td', {}, '', [createElement('input', {'id':'transfer'+transfer.id+"-flowrate", type: 'number', min: '0' })]),
-				createElement('td', {}, '', [createElement('button',{onclick: () => {handleDeleteTransfer(transfer.id)}},'',[createElement('i',{class:'material-icons'},'delete')])])
+				createElement('td', {}, '', [createElement('button',{onclick: () => {handleDeleteTransfer(transfer.id)}},'',[createElement('i',{class:'material-symbols'},'delete')])])
 				
 			])
 		)
@@ -1152,13 +1152,13 @@ function renderMainTabs() {
 
     var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results']
 
-	var icons = [`<span class="material-icons">space_dashboard</span>`,
-			`<span class="material-icons">thermostat</span>`,
-			`<span class="material-icons">air</span>`,
+	var icons = [`<span class="material-symbols">space_dashboard</span>`,
+			`<span class="material-symbols">thermostat</span>`,
+			`<span class="material-symbols">air</span>`,
 			getIcon('insulation'),
 			getIcon('areas'),
 			getIcon('reheat'),
-			`<span class="material-icons">calculate</span>`
+			`<span class="material-symbols">calculate</span>`
 			]
 			
 	
@@ -1169,6 +1169,7 @@ function renderMainTabs() {
 			var textSpan = document.createElement('span')
 			textSpan.setAttribute('lang-key',tabName)
             textSpan.textContent = translate(tabName);
+			textSpan.setAttribute('class','main-menu-text')
 
 			tab.setAttribute('class','tab')
 
@@ -1573,10 +1574,14 @@ function initializePage(container_id) {
 
     // Data Buttons Section
     const dataButtons = createElement('div', { class: 'data-buttons' }, '', [
-        createElement('button', { 'lang-key':'export', id: 'exportDataBtn' }, 'Export Data'),
-        createElement('button', { 'lang-key':'import', id: 'importDataBtn' }, 'Import Data'),
-        createElement('input', { id: 'fileInput', type: 'file', style: 'display: none;', onchange: () => importData(this), accept: '.json' }),
-		createElement('button', { 'lang-key':'save_as_pdf', id: 'printBtn' }, 'save_as_pdf'),
+        //createElement('button', { 'lang-key':'export', id: 'exportDataBtn' }, 'Export Data',[
+		createElement('button', { id: 'exportDataBtn' }, '',[
+			createElement('i',{'class':'material-symbols'},'save')]),
+        //createElement('button', { 'lang-key':'import', id: 'importDataBtn' }, 'Import Data'),
+        createElement('button', {id: 'importDataBtn' }, '',[
+		createElement('i',{'class':'material-symbols'},'folder_open')]),
+		createElement('input', { id: 'fileInput', type: 'file', style: 'display: none;', onchange: () => importData(this), accept: '.json' }),
+		createElement('button', { id: 'printBtn' }, '',[createElement('i',{'class':'material-symbols'},'picture_as_pdf')]),
 
     ]);
 	
