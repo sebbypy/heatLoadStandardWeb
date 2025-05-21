@@ -619,6 +619,12 @@ class DataModel {
 
     }
 
+    getHeatedSpaces() {
+        return this.spaces.filter(space => space.type === "heated");
+
+    }
+
+
     getOtherSpaceId(spaceid, spaceslist) {
 
         const copiedList = Array.from(spaceslist);

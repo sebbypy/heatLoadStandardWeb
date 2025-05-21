@@ -1,3 +1,22 @@
+// remaining to do
+//
+// content:  dealing with hm functionality ? (for average heights greater than 4 m)
+//
+// UI/UX: ease copy/paste values
+//   - copy one line to another (copy some row, paste to another row)
+//      - copy existing to another existing
+//      - paste as new item
+//   - copy one value of a column to all other ("apply to all")
+//   - add management of floors just for display purpose ? - or sorting function for spaces ? (renumbering alphabetically for example --> implicit floor management)
+//   - copy wallinstance from onespace to another
+//   - copy all wallinstances of a space to another
+//   
+
+
+
+
+
+
 function getCurrentLanguage() {
     var selector = document.getElementById('languageSelector');
     if (selector){
@@ -498,8 +517,36 @@ function renderReheat(){
 	
 	renderTable(table,columns,data)
 
-		
+	addCopyToAllButton(table,2,handleCopyHeatupToAll)
+
 	}
+
+function addCopyToAllButton(table,columnid,onclickfunction){
+	if (table.rows.length>1){
+		var targetCell = table.rows[1].cells[columnid]; //assume always row 1, i.e. after heading
+		const button = document.createElement('button');
+		button.innerHTML='<i class="material-symbols material-symbols-inline" >content_copy</i><i class="material-symbols material-symbols-inline">arrow_downward</i>'
+		button.style.position = "absolute"
+		button.style.padding = "2px"
+		targetCell.appendChild(button)
+		button.onclick = onclickfunction
+	}
+	
+}
+
+function handleCopyHeatupToAll(){
+
+	var firstspace = model.getHeatedSpaces()[0]
+	
+	var value = model.getSpaceHeatUpTime(firstspace.id)
+	
+	model.spaces.forEach( space =>{
+		model.setSpaceHeatUpTime(space.id,value)
+	})
+	model.computeAll()
+	renderAll()
+}
+		
 
 
 function renderTabs(){
