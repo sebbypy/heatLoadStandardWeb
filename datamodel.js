@@ -811,7 +811,7 @@ class DataModel {
                             if (extracted_space.type == "heated" && extracted_space.ventilation.mechanical_extract_flowrate > 0) {
 
                                 if (extracted_space.heating_type == "equilibrium") {
-                                    k = mapping.get(extracted_space.id)
+                                    var k = mapping.get(extracted_space.id)
                                         A[i][k] += -0.34 * eta * space.ventilation.mechanical_supply_flowrate * extracted_space.ventilation.mechanical_extract_flowrate / totalMechanicalExtractFlowrate
                                 } else {
                                     b[i] += 0.34 * eta * space.ventilation.mechanical_supply_flowrate * extracted_space.ventilation.mechanical_extract_flowrate / totalMechanicalExtractFlowrate * extracted_space.temperature
