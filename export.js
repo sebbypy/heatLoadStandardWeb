@@ -31,7 +31,7 @@ async function exportPageToPDF() {
 
             yPosition = checkNewPage(pdf,yPosition,pageHeight)
 			
-			sizes = {"H1":20,"H2":16,"H3":12}
+			sizes = {"H1":16,"H2":14,"H3":12}
 			
             pdf.setFontSize(sizes[element.tagName]);
             //pdf.setFontSize(element.tagName === "H3" ? 24 : 18);
@@ -178,8 +178,10 @@ async function exportPageToPDF() {
     }
 	
 	addNumbersAndDates(pdf)
+	addWatermark(pdf)
     pdf.save("exported_content.pdf");
 }
+
 
 
 function checkNewPage(pdf,yPosition,pageHeight){
@@ -284,3 +286,26 @@ function addNumbersAndDates(doc){
 	}
 }
 
+
+function addWatermark(doc){
+	
+	
+	//var gState = doc.GState({ opacity: 0.5, stroke: 1 });
+
+	
+	for (let i = 1; i <= doc.getNumberOfPages(); i++) {
+		doc.setPage(i); // Go to the page
+		
+		doc.saveGraphicsState();
+
+		// Register the graphics state
+		const gState = doc.GState({ opacity: 0.5, stroke: 1 });
+		doc.setGState(gState);
+
+		doc.setFontSize(60);
+		doc.setTextColor(220, 220, 220)
+		doc.text('TEST VERSION',doc.internal.pageSize.width/3, doc.internal.pageSize.height*2/3,{angle:60});
+		doc.restoreGraphicsState();
+	}
+
+}
