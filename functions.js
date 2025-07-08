@@ -1900,6 +1900,12 @@ function initializePage(container_id) {
 	
 	document.getElementById('resetData').addEventListener('click',resetPage)
 
+
+	document.getElementById("printBtn").addEventListener("click", () => {
+		trackEvent("export_click", "main", { note: "User clicked export button" });
+	});
+
+
 }
 
 
@@ -1961,3 +1967,22 @@ function resetPage(){
 
 
         
+function trackEvent(eventName, pageName, extra = {}) {
+  fetch("https://script.google.com/macros/s/AKfycbz1e_8PNLf25VUbnXLffiByopPEcsuPdIDggtxggUiGMgx4HamE4_MnCRdorcypysav9A/exec", {
+    method: "POST",
+    contentType: "application/json",
+    body: JSON.stringify({
+      event: eventName,
+      page: pageName,
+      extra: extra
+    })
+  }).catch(err => {
+    console.error("Tracking failed:", err);
+  });
+}
+
+
+
+
+		
+		
