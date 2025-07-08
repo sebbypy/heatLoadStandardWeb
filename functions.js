@@ -86,6 +86,14 @@ function handleVentilationChange(spaceId, parameter, value){
 function handleAddTransfer(){
 	model.createTransferFlow(1,1,0)
 	renderAll()
+	
+	//scroll to bottom
+	window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: 'auto' // or 'smooth' if you want an animation
+	});
+
+	
 }
 
 function handleDeleteTransfer(transferid){
@@ -147,6 +155,13 @@ function handleWallThermalBridgeChange(wallElementId, newThermalBridge) {
 	renderAll()
 }
 
+function handleIsHeatingElementChange(wallElementId, isHeatingElement) {
+	//model.changeWallBridgeValue(wallElementId,newThermalBridge)
+	model.changeWallIsHeatingElement(wallElementId,isHeatingElement)
+	console.log("change heating",isHeatingElement)
+	renderAll()
+}
+
 
 // Wall instances
 
@@ -155,7 +170,10 @@ function handleAddWallInstance(indexSpace) {
     const space = model.spaces[indexSpace];
 	model.createNewWallInstance(space.id)
 	renderAll() // 0 area wall, no calculation needed
+	console.log("add wall instance")
+	console.log("space ",indexSpace)
     toggleVisibility(`space-${indexSpace}`);
+	
 }
 
 
@@ -218,6 +236,9 @@ function handleSetDefaultBoundaryTemperatures(){
 // ----------------
 
 function renderAll(){
+
+    const scrollY = window.scrollY; 
+
 	// render all visible screens
 	
 	renderTabs()
@@ -233,6 +254,9 @@ function renderAll(){
 	renderTransferFlowsTable()
 	renderReheat()
 	renderResults()
+
+	window.scrollTo(0, scrollY);
+
 	
 }
 
@@ -454,9 +478,11 @@ function renderWallElementRow(table, wElement) {
     row.insertCell(1).innerHTML = `<input type="number" name="valeurU${wElement.id}" value="${wElement.uValue}" onchange="handleWalUValueChange(${wElement.id}, this.value)">`;
     row.insertCell(2).innerHTML = `<input type="number" name="pontThermique${wElement.id}" value="${wElement.thermalBridge}" onchange="handleWallThermalBridgeChange(${wElement.id}, this.value)">`;
 
+	row.insertCell(3).innerHTML = `<input type="checkbox"  ${wElement.isHeatingElement ? "checked" : ""} " onchange="handleIsHeatingElementChange(${wElement.id}, this.checked)">`;
+
 
     //row.insertCell(3).innerHTML = `<button onclick="handleDeleteWallElement(${wElement.id})">Delete</button>`;
-	const cell = row.insertCell(3)
+	const cell = row.insertCell(4)
     const button = document.createElement('button');
     button.innerHTML = '<i class="material-symbols">delete</i>'
 	button.onclick = () => handleDeleteWallElement(wElement.id);
@@ -551,15 +577,24 @@ function handleCopyHeatupToAll(){
 
 function renderTabs(){
 
-    const activeTab = document.querySelector('.tab.active-tab');
-	const activeTabId = activeTab ? activeTab.id :'tab-spaces';
+    const activeTabs = document.querySelectorAll('.tab.active-tab');
+    const activeTabIds = Array.from(activeTabs).map(tab => tab.id);
+	
+	console.log("activetabs",activeTabIds)
 
     renderMainTabs(); 
 
 	var spaceTabs = document.getElementById('spacetabs')
     spaceTabs.innerHTML = ''; // Clear previous tabs to refresh them
 
-	document.getElementById(activeTabId).classList.add('active-tab') // restore default active tab or previouslys active tabe
+	//document.getElementById(activeTabId).classList.add('active-tab') // restore default active tab or previouslys active tabe
+	activeTabIds.forEach(id => {
+        const tab = document.getElementById(id);
+        if (tab) {
+			console.log("adding active",tab)
+            tab.classList.add('active-tab');
+        }
+    });
 	
 	setTabsColorBehavior()
 	
@@ -596,6 +631,16 @@ function setSpaceTabsColorBehavior(){
 function renderWallInstances() {
 
     var container = document.getElementById('spacesContainer');
+
+	/*getting active space tab and restore it*/
+	const activeSpaceTab = container.querySelector('.tab.active-tab');
+	var activeSpaceId = null
+	if (activeSpaceTab){
+		 activeSpaceId = activeSpaceTab.id
+	}
+	
+
+
     container.innerHTML = ''; // Clear existing tables
 
 	const heading = document.createElement("h2");
@@ -616,6 +661,9 @@ function renderWallInstances() {
 				toggleVisibility(`space-${index}`);
 			};
 			container.appendChild(tab)
+			if (tab.id == activeSpaceId){
+				tab.classList.add('active-tab');
+			}
 		}
 	})
 
@@ -725,7 +773,16 @@ function renderWallInstances() {
 						//const lossInput = document.createElement('p');
 						//lossInput.type = 'text';
 						lossCell.name = `lossWallInstance${wall.id}`;
-						lossCell.innerHTML = (wall.transmissionLoss * multiplier).toFixed(0);
+
+
+						console.log("before display",wall.transmissionLoss)
+						if (typeof(wall.transmissionLoss) == "number"){
+							lossCell.innerHTML = (wall.transmissionLoss * multiplier).toFixed(0);
+						}
+						else{
+							lossCell.innerHTML = wall.transmissionLoss
+						}
+
 						//lossInput.disabled = true;
 						//lossCell.appendChild(lossInput);
 						row.appendChild(lossCell);
@@ -1148,7 +1205,7 @@ function renderAirTightness(){
 
 function toggleVisibility(input) {
 	
-	//console.log("toggle ",input)
+	console.log("toggle ",input)
 	
     var mainsections = document.querySelectorAll('.main-section');
     var spacessections = document.querySelectorAll('.space-section');
@@ -1359,21 +1416,6 @@ function confirmFilename() {
     exportData(filename);
 }
 
-function exportData(filename) {
-    const jsonData = JSON.stringify(model, null, 4);
-    const blob = new Blob([jsonData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-
 
 	
  /*   const jsonData = JSON.stringify(model, null, 4); // Beautify the JSON
@@ -1419,6 +1461,51 @@ function exportData(filename) {
 	
 }
 */
+
+
+function exportData(filename) {
+    const jsonData = JSON.stringify(model, null, 4);
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function loadModelFromJson(jsonData) {
+    try {
+        const parsed = JSON.parse(jsonData);
+        model = new DataModel();
+        if (parsed.spaces && parsed.wallElements && parsed.wallInstances) {
+            model.spaces = parsed.spaces;
+            model.wallElements = parsed.wallElements;
+            model.wallInstances = parsed.wallInstances;
+
+            model.otherData = deepMergeDefaults(model.otherData, parsed.otherData);
+            model.zipCode = parsed.zipCode;
+            model.airTransfers = parsed.airTransfers;
+
+            model.spaceIdCounter = Math.max(...model.spaces.map(space => space.id)) + 1;
+            model.wallElementsIdCounter = Math.max(...model.wallElements.map(element => element.id)) + 1;
+            model.wallInstanceID = Math.max(0, ...model.wallInstances.map(instance => instance.id)) + 1;
+
+            model.computeAll();
+            renderAll();
+            console.log("compute and render");
+        } else {
+            throw new Error("Invalid data structure");
+        }
+    } catch (error) {
+        alert("Error loading or parsing data: " + error.message);
+    }
+}
+
+
 function importData() {
     const fileInput = document.getElementById('fileInput');
     if (!fileInput.files.length) {
@@ -1435,29 +1522,8 @@ function importData() {
     const reader = new FileReader();
     reader.onload = function(event) {
         try {
-            const jsonData = JSON.parse(event.target.result);
-			model = new DataModel()
-            if (jsonData.spaces && jsonData.wallElements && jsonData.wallInstances) {
-                model.spaces = jsonData.spaces;
-                model.wallElements = jsonData.wallElements;
-                model.wallInstances = jsonData.wallInstances;
-				//model.otherData = jsonData.otherData;
-				
-				model.otherData = deepMergeDefaults(model.otherData,jsonData.otherData);
-				model.zipCode = jsonData.zipCode
-				model.airTransfers = jsonData.airTransfers
-
-                model.spaceIdCounter = Math.max(...model.spaces.map(space => space.id)) + 1;
-                model.wallElementsIdCounter = Math.max(...model.wallElements.map(element => element.id)) + 1;
-				model.wallInstanceID = Math.max(0, ...model.wallInstances.map(instance => instance.id)) + 1;
-				
-				model.computeAll()
-				renderAll()
-				console.log("compute and render")
-	
-            } else {
-                throw new Error('Invalid data structure');
-            }
+			loadModelFromJson(event.target.result)
+            
         } catch (error) {
             alert("Error loading or parsing the file: " + error.message);
         }
@@ -1468,6 +1534,28 @@ function importData() {
 
     reader.readAsText(file);
 }
+
+
+function saveModelToLocalStorage() {
+    const jsonData = JSON.stringify(model, null, 4);
+	localStorage.setItem('myAppModel', jsonData);
+}
+
+
+function loadModelFromLocalStorage() {
+	
+    const jsonData = localStorage.getItem('myAppModel');
+    if (jsonData) {
+        loadModelFromJson(jsonData);
+    } else {
+        console.log("No saved model found in local storage.");
+    }
+}
+
+
+
+
+
 
 function deepMergeDefaults(defaultObj, savedData) {
   const result = structuredClone(defaultObj);
@@ -1623,14 +1711,18 @@ function initializePage(container_id) {
     const dataButtons = createElement('div', { class: 'data-buttons' }, '', [
         //createElement('button', { 'lang-key':'export', id: 'exportDataBtn' }, 'Export Data',[
 		createElement('button', { id: 'exportDataBtn' }, '',[
-			createElement('i',{'class':'material-symbols'},'save')]),
+		createElement('i',{'class':'material-symbols'},'save')]),
         //createElement('button', { 'lang-key':'import', id: 'importDataBtn' }, 'Import Data'),
         createElement('button', {id: 'importDataBtn' }, '',[
 		createElement('i',{'class':'material-symbols'},'folder_open')]),
 		createElement('input', { id: 'fileInput', type: 'file', style: 'display: none;', onchange: () => importData(this), accept: '.json' }),
 		createElement('button', { id: 'printBtn' }, '',[createElement('i',{'class':'material-symbols'},'picture_as_pdf')]),
-
+		createElement('button', { id: 'exportDocx' }, '',[createElement('i',{'class':'material-symbols'},'')]),
+		createElement('button', { id: 'resetData' }, '',[createElement('i',{'class':'material-symbols'},'cancel')],tooltipKey=translate("reset"))
+	
     ]);
+	//createElement('button', { id: 'exportDocx' }, '',[getIcon("docx")])
+
 	
 
     // Tabs Container
@@ -1745,6 +1837,7 @@ function initializePage(container_id) {
                 createElement('th', { 'lang-key': 'wall_name' }, 'Nom du wall'),
                 createElement('th', { 'lang-key': 'u_value' }, 'Valeur U'),
                 createElement('th', { 'lang-key': 'thermal_bridge_coefficient' }, 'Coefficient de pont thermique',[],tooltipText='thermal_bridge_tooltip'),
+                createElement('th', { 'lang-key': 'is_floor_heating' }, 'Plancher ou mur chauffant ',[],tooltipText='floor_heating_tooltip'),
                 createElement('th', {}, '')
             ])
         ])
@@ -1801,8 +1894,70 @@ function initializePage(container_id) {
 	});	
 	document.getElementById('printBtn').addEventListener('click',exportPageToPDF)
 
+	document.getElementById('exportDocx').addEventListener('click',exportToWord)
+	document.getElementById('exportDocx').insertAdjacentHTML("beforeend",getDocx())  // adding Icon
+	
+	
+	document.getElementById('resetData').addEventListener('click',resetPage)
+
 }
 
 
 
 
+window.addEventListener('beforeunload', (event) => {
+    saveModelToLocalStorage();
+    // Optionally: show confirmation dialog to the user
+    // event.preventDefault();
+    // event.returnValue = '';
+});
+
+
+window.addEventListener('load', () => {
+    const jsonData = localStorage.getItem('myAppModel');
+    if (jsonData) {
+        //if (confirm("We found a saved session. Do you want to restore it?")) {
+            loadModelFromJson(jsonData);
+        //}
+    }
+});
+
+
+
+
+function loadPage(){
+	
+	model = new DataModel();
+	
+	document.getElementById("main_container").innerHTML = ""
+	initializePage("main_container")
+	addOutsideBoundary()
+
+	model.createNewWallElement("Mur ext",0.24,0.02)
+	model.createNewWallElement("Toit",0.24,0.02)
+	model.createNewWallElement("Menuiseries DV",1.5,0.0)
+
+	//model.createNewSpace("space")
+
+	//var vModel = new VentilationModel(model);
+	//vModel.setSpaces(model.spaces);
+	
+
+	renderAll()
+	toggleVisibility('spaces')
+	
+	switchLanguage(getCurrentLanguage())
+
+}
+
+function resetPage(){
+	
+	if (confirm(translate("confirm_reset"))) {
+		loadPage()
+	}
+	
+
+}
+
+
+        

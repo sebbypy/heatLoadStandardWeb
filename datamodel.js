@@ -135,7 +135,7 @@ class DataModel {
         //console.log(this.wallInstances)
     }
 
-    createNewWallElement(name, uvalue = 0, bridge = 0) {
+    createNewWallElement(name, uvalue = 0, bridge = 0, isHeatingElement = false) {
 
         this.wallElementsIdCounter++;
 
@@ -143,7 +143,8 @@ class DataModel {
             name: name,
             id: this.wallElementsIdCounter,
             uValue: uvalue, // Assuming default values or form inputs can populate these
-            thermalBridge: bridge // Assuming default values or form inputs can populate these
+            thermalBridge: bridge, // Assuming default values or form inputs can populate these
+			isHeatingElement: isHeatingElement
         };
 
         this.wallElements.push(newWallElement);
@@ -184,6 +185,16 @@ class DataModel {
 		}
 		this.computeAll()
 	}
+
+	changeWallIsHeatingElement(wallElementId,isHeatingElement){
+		const welement = this.wallElements.find(welement => welement.id === wallElementId);
+		if (welement) {
+			welement.isHeatingElement = isHeatingElement;
+		}
+		this.computeAll()
+	}
+	
+
 
 	changeWallInstancearea(wallId,newArea){
 		const wallInstance = this.wallInstances.find(m => m.id === wallId);
@@ -247,7 +258,15 @@ class DataModel {
             const deltaT = spaceTemps[0] - spaceTemps[1];
             heatLoss = wallInstance.Area * (wall.uValue + wall.thermalBridge) * deltaT;
         }
-        wallInstance.transmissionLoss = heatLoss
+		
+		if (wall.isHeatingElement){
+			console.log("yet it is heating")
+			wallInstance.transmissionLoss="-"
+		}
+		else{
+		
+			wallInstance.transmissionLoss = heatLoss
+		}
 
     }
 
@@ -268,7 +287,9 @@ class DataModel {
 						const linkedSpace = model.spaces.find(e => e.id === linkedSpaceId);
 
 						const multiplier = wall.spaces.indexOf(space.id) === 0 ? 1 : -1;
-						spaceTotalLoss += multiplier * wall.transmissionLoss;
+						if (typeof(wall.transmissionLoss) == "number"){
+							spaceTotalLoss += multiplier * wall.transmissionLoss;
+						}
 						spaceTotalSurface += wall.Area;
 					})
 				space.transmission_heat_loss = spaceTotalLoss

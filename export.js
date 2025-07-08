@@ -46,7 +46,6 @@ async function exportPageToPDF() {
 			const colorTable = []; // Sister array for colors (only for the body)
 
 			var headers = Array.from(element.rows)[0]
-			console.log(headers.cells)
 				
 			var currentCol = 0
 
@@ -69,10 +68,16 @@ async function exportPageToPDF() {
 					const select = cell.querySelector("select");
 
 					if (input) {
-						rowData.push(input.value);
-						if (rowIndex > 0) rowColors.push([0, 135, 183]); // Blue for inputs/selects
-					} 
-					else if (select) {
+						if (input.type === "checkbox") {
+							const checkboxSymbol = input.checked ? "X" : ""; 
+							rowData.push(checkboxSymbol);
+							if (rowIndex > 0) rowColors.push([0, 135, 183]);
+						} else {
+							rowData.push(input.value);
+							if (rowIndex > 0) rowColors.push([0, 135, 183]);
+						}
+					}
+ 					else if (select) {
 						rowData.push(select.options[select.selectedIndex].text);
 						if (rowIndex > 0) rowColors.push([0, 135, 183]); // Blue for inputs/selects
 					} 
@@ -307,5 +312,178 @@ function addWatermark(doc){
 		doc.text('TEST VERSION',doc.internal.pageSize.width/3, doc.internal.pageSize.height*2/3,{angle:60});
 		doc.restoreGraphicsState();
 	}
+
+}
+
+
+
+async function exportToWord() {
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, WidthType, AlignmentType } = docx;
+
+
+	const parentDiv = document.querySelector(".content"); // Replace with your target div
+	var elements = parentDiv.querySelectorAll("h1, h2, h3, table,p, span:not(table span), select:not(table select), input:not(table input)");
+
+	var reorderedElements = moveElementById(Array.from(elements), "heatloss_table", 1); 
+	reorderedElements = moveElementById(Array.from(reorderedElements), "results_header", 1); 
+
+	
+    const docParagraphs = [];
+
+    for (const element of reorderedElements) {
+        if (window.getComputedStyle(element).display === "none") {
+            continue;
+        }
+
+        if (["H1", "H2", "H3"].includes(element.tagName)) {
+            const levelMap = {
+                H1: HeadingLevel.HEADING_1,
+                H2: HeadingLevel.HEADING_2,
+                H3: HeadingLevel.HEADING_3,
+            };
+
+            docParagraphs.push(
+                new Paragraph({
+                    text: element.innerText,
+                    heading: levelMap[element.tagName],
+					spacing: {
+					before: 200, // space before (in twentieths of a point)
+					after: 300,  // space after (in twentieths of a point)
+					},
+                })
+            );
+        }
+
+        else if (element.tagName === "TABLE") {
+            const rows = [];
+            const tableRows = Array.from(element.rows);
+            //const headers = Array.from(tableRows[0].cells).map(cell => cell.textContent.trim());
+			const headers = Array.from(tableRows[0].cells).map(cell => {
+				return Array.from(cell.childNodes)
+					.filter(node => node.nodeType === Node.TEXT_NODE)
+					.map(node => node.textContent.trim())
+					.join(" ");
+			});  // avoid taking nested elements with it (aka: tooltips)
+
+            // Build header row
+            const headerRow = new TableRow({
+                children: headers.map(headerText =>
+                    new TableCell({
+                        children: [
+							new Paragraph({
+								children: [
+									new TextRun({
+										text: headerText,
+										bold: true,
+										color: "FFFFFF", // White text
+									}),
+								],
+							}),
+						],
+						shading: {
+							fill: "0087b7", // Your blue (same as you use in PDF)
+						},
+                        width: { size: 20, type: WidthType.PERCENTAGE },
+                    })
+                ),
+            });
+            rows.push(headerRow);
+
+            // Body rows
+            for (let i = 1; i < tableRows.length; i++) {
+                const cells = Array.from(tableRows[i].cells).map(cell => {
+                    let text = "";
+                    const input = cell.querySelector("input, textarea");
+                    const select = cell.querySelector("select");
+
+					if (input) {
+						if (input.type === "checkbox") {
+							text = input.checked ? "X" : ""; 
+						} else {
+							text = input.value;
+						}
+                    } else if (select) {
+                        text = select.options[select.selectedIndex].text;
+                    } else {
+                        text = Array.from(cell.childNodes)
+                            .filter(node => node.nodeType === Node.TEXT_NODE)
+                            .map(node => node.textContent.trim())
+                            .join(" ");
+                    }
+
+                    return new TableCell({
+                        children: [new Paragraph(text)],
+                        width: { size: 20, type: WidthType.PERCENTAGE },
+                    });
+                });
+
+                rows.push(new TableRow({ children: cells }));
+            }
+
+            docParagraphs.push(new Table({
+                rows,
+                width: {
+                    size: 100,
+                    type: WidthType.PERCENTAGE,
+                },
+                alignment: AlignmentType.CENTER,
+            }));
+        }
+
+        else if (element.tagName === "SELECT") {
+            const selectedText = element.options[element.selectedIndex].text;
+            docParagraphs.push(new Paragraph({
+                children: [new TextRun(selectedText)],
+            }));
+        }
+
+        else if (element.tagName === "P") {
+            const subElements = element.querySelectorAll("span, input");
+            const paragraphChildren = [];
+
+            subElements.forEach(subel => {
+                if (window.getComputedStyle(subel).display === "none") return;
+
+                let text = "";
+                let runOptions = {};
+
+                if (subel.tagName === "SPAN") {
+                    text = subel.innerText;
+                    runOptions = { text };
+                }
+                else if (subel.tagName === "INPUT") {
+                    if (subel.type === "checkbox") {
+                        text = subel.checked ? translate("yes") : translate("no");
+                    } else {
+                        text = subel.value;
+                    }
+                    runOptions = { text, bold: true }; // Example: highlight inputs as bold
+                }
+
+                paragraphChildren.push(new TextRun(runOptions));
+            });
+
+            docParagraphs.push(new Paragraph({
+                children: paragraphChildren,
+            }));
+        }
+    }
+  // Create document
+    const doc = new Document({
+        sections: [{
+            properties: {},
+            children: docParagraphs,
+        }],
+    });
+
+    // Generate and download
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "export.docx";
+    a.click();
+    URL.revokeObjectURL(url);
 
 }

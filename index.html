@@ -23,6 +23,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 
 	
 	<script>
@@ -54,25 +55,7 @@
 	<script>
 
 	var model = new DataModel();
-	//model.createNewBoundary('Ext',bc_type='outside')
-	initializePage("main_container")
-	addOutsideBoundary()
-
-	model.createNewWallElement("Mur ext",0.24,0.02)
-	model.createNewWallElement("Toit",0.24,0.02)
-	model.createNewWallElement("Menuiseries DV",1.5,0.0)
-
-	//model.createNewSpace("space")
-
-	//var vModel = new VentilationModel(model);
-	//vModel.setSpaces(model.spaces);
-	
-
-	renderAll()
-	toggleVisibility('spaces')
-	
-	switchLanguage(getCurrentLanguage())
-
+	loadPage()
 	
 	</script>
 
