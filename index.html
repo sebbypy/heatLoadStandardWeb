@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Calcul des déperditions thermiques</title>
-	
+
 	<script src="datamodel.js"></script>
+	<script src="ventilationModel.js"></script>
+	<script src="radiatorsModel.js"></script>
 	<script src="translations.js"></script>
 	<script src="weather.js"></script>
 	<script src="functions.js"></script>
@@ -14,6 +16,11 @@
 	<script src="ventilationAssistant.js"></script>
 	<script src="icons.js"></script>
 	<script src="export.js"></script>
+	<script src="io.js"></script>
+	<script src="manageLanguage.js"></script>
+	<script src="render.js"></script>
+	<script src="main.js"></script>	
+	
 	
 	<!--<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"> -->
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols">
@@ -26,8 +33,6 @@
 	<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 
 	
-	<script>
-	</script>
 
 </head>
 
@@ -55,6 +60,7 @@
 	<script>
 
 	var model = new DataModel();
+	var radModel = new RadiatorsModel();
 	loadPage()
 	
 	</script>

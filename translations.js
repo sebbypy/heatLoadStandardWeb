@@ -165,7 +165,8 @@ var translations = {
 		"flow_balance":"Déséquilibre (m³/h)",
 		"confirm_reset":"Les données actuellement seront perdues si vous n'avez pas sauvegardé. Poursuivre?",
 		"reset":"Supprimer tout",
-		"is_floor_heating":"Plancher/mur chauffant?"
+		"is_floor_heating":"Plancher/mur chauffant?",
+		"load":"Ouvrir"
     },
 	'nl': {
         "heat_loss_calculation": "Warmteverlies berekening volgens NBN EN 128311 - ANB 2020",
@@ -333,7 +334,8 @@ var translations = {
 	"flow_balance":"Onbalans (m³/h)",
 	"confirm_reset":"Huidige data zal verdwijnen als uw werk niet opgeslagen is. Ga verder? ",
 	"reset":"Alles verwijderen",
-	"is_floor_heating":"Vloer of wand verwarming?"
+	"is_floor_heating":"Vloer of wand verwarming?",
+	"load":"Open"
     },
 
     // Add additional languages here

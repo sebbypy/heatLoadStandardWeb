@@ -184,7 +184,7 @@ margin:0px;
 
 .data-buttons {
     position: absolute;
-    right: 10px;
+    right: 50px;
     top: 10px;
 }
 
@@ -218,7 +218,7 @@ table th {
 
 .tooltiptext {
     visibility: hidden;
-	min-width: 150px;
+	min-width: 130px;
     max-width: 350px;
     background-color: black;
     color: #fff;
