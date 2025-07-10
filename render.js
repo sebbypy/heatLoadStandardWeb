@@ -168,6 +168,7 @@ function initializePage(container_id) {
     const resultsContainer = createElement('div', { id: 'results', class: 'main-section' });
 
 	const radiatorsContainer = createElement('div', { id: 'radiators', class: 'main-section' }, '',)
+	const floorHeatingContainer = createElement('div', { id: 'floorheating', class: 'main-section' }, '',)
 	
 	
 	contentContainer.append(        
@@ -178,7 +179,8 @@ function initializePage(container_id) {
         spacesContainer,
         reheatContainer,
         resultsContainer,
-		radiatorsContainer
+		radiatorsContainer,
+		floorHeatingContainer
 	)
 
 
@@ -231,9 +233,10 @@ function renderAll(){
 	renderReheat()
 	renderResults()
 	renderRadiators()
+	renderFloorHeating()
+
 
 	window.scrollTo(0, scrollY);
-
 	
 }
 
@@ -1081,7 +1084,8 @@ function renderMainTabs() {
     tabContainer.innerHTML = ''; // Clear existing tabs
 
 
-    var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators']
+    //var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
+	var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results']
 
 	var icons = [`<span class="material-symbols">space_dashboard</span>`,
 			`<span class="material-symbols">thermostat</span>`,
@@ -1091,6 +1095,7 @@ function renderMainTabs() {
 			getIcon('reheat'),
 			`<span class="material-symbols">calculate</span>`,
 			getIcon('radiator'),
+			`<span class="material-symbols">nest_true_radiant</span>`,
 			]
 			
 	
@@ -1279,3 +1284,29 @@ function setSpaceTabsColorBehavior(){
 	});
 }
 
+
+
+function renderFloorHeating(){
+	
+	var div = document.getElementById("floorheating")
+	div.innerHTML=""
+	
+	var content = createElement('div',{},'',[
+						createElement('h2',{"lang-key":"floor_heating"},'floor_heating',[]),
+						createElement('h3',{'lang-key':'spaces'},'spaces',[]),
+						createElement('table',{'id':'table_spaces_floor'},'',[]),
+						createElement('h3',{'lang-key':'floor_system'},'floor_system',[]),
+						createElement('select',{'id':'floor_system_select'},'',[]),
+						createElement('h3',{'lang-key':'ref_loop'},'ref_loop',[]),
+						createElement('select',{'id':'ref_loop_select'},'',[])
+						])
+
+
+	
+
+
+	div.append(content)
+	
+	
+	
+}

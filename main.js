@@ -2,6 +2,7 @@ function loadPage(){
 	
 	model = new DataModel();
 	radModel = new RadiatorsModel();
+	floorModel = new FloorHeatingModel();
 	radModel.linkToModel(model);
 
 	

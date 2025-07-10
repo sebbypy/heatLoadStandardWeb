@@ -1,4 +1,4 @@
-class FloorHeatingCalculator {
+class FloorHeatingModel {
     constructor() {
         this.spaces = {}; // Store spaces with ID as key
         this.loops = []; // List of loops
@@ -76,7 +76,9 @@ class FloorHeatingCalculator {
 	
 		var theta_i = refLoop.stats.meanAirTemperature
 		var sigma = this.designDeltaT
-		var delta_theta_H_des = Math.round(refLoop.stats.heatLoadPerSqMeter/this.getLoopKh(this.refLoopid))
+		
+		//var delta_theta_H_des = Math.round(refLoop.stats.heatLoadPerSqMeter/this.getLoopKh(this.refLoopid))
+		var delta_theta_H_des = parseFloat((refLoop.stats.heatLoadPerSqMeter/this.getLoopKh(this.refLoopid)).toFixed(1))
 		
 		if (delta_theta_H_des === 0) {
 			console.error("Error: Δθ_H,des cannot be zero to avoid division by zero.");
@@ -95,6 +97,9 @@ class FloorHeatingCalculator {
 		}
 
 		this.supplyWaterTemperature = Math.ceil(numerator / denominator)
+
+		console.log("supplyt T",theta_i,sigma,delta_theta_H_des)
+
 
 		return numerator / denominator;
 	}
@@ -471,7 +476,8 @@ class FloorHeatingCalculator {
 		this.loops.forEach( loop =>{
 
 			var Tj = loop.stats.meanAirTemperature
-			var deltaH = Math.round(loop.stats.heatLoadPerSqMeter/this.getLoopKh(loop.id))
+			//var deltaH = Math.round(loop.stats.heatLoadPerSqMeter/this.getLoopKh(loop.id),1)
+			var deltaH = parseFloat((loop.stats.heatLoadPerSqMeter/this.getLoopKh(loop.id)).toFixed(1))
 			
 			let term1 = 2*Math.cbrt(deltaH); // Compute (2 * Δθ_H,j)^(1/3)
 			let term2 = Math.cbrt(this.supplyWaterTemperature - Tj); // Compute (θ_V,des - θ_j)^(1/3)
@@ -575,7 +581,7 @@ class FloorHeatingCalculator {
 	
 
 function createFloorHeatingTestModel(){
-	var x = new FloorHeatingCalculator();
+	var x = new FloorHeatingModel();
 
 	x.addSpace("space x",1, 14.4, 20, 1029);
 	x.addSpace("space x",2, 34.4, 20, 2147);
@@ -635,7 +641,7 @@ function createFloorHeatingTestModel(){
 
 // Test function
 function test() {
-    var x = new FloorHeatingCalculator();
+    var x = new FloorHeatingModel();
 
 	x.addSpace("space x",1, 14.4, 20, 1029);
 	x.addSpace("space x",2, 34.4, 20, 2147);
@@ -703,5 +709,49 @@ function test() {
 	
 }
 
+function test2() {
+    var x = new FloorHeatingModel();
+
+	x.addSpace("R1",1, 10, 25, 839);
+	x.addSpace("R2",2, 10, 25, 839);
+	x.addSpace("R3",3, 10, 25, 839);
+	x.addSpace("R4",4, 10, 25, 839);
+
+    x.createDefaultLoops(); 
+	
+	x.setSystem("Begetube 16/2")
+	x.loops.forEach( loop => {
+		x.setTubeSpacing(loop.id,5)
+		x.setLoopFloorResistance(loop.id,0.05)
+		
+	})
+
+	x.setRefLoop(1)
+	x.setDesignTemperatureDifference(6)
+
+	x.computeAll()
+
+	console.log(x.loops)
+	
+	console.log(x.isExtraLossDataComplete())
+	
+	x.loops.forEach (loop => {
+		x.setLoopL0(loop.id,5)
+		x.computeLoopsLength(loop.id)
+		x.setLoopResistances(loop.id,0.14,1.99)
+		x.setLoopBelowTemperature(loop.id,-7)
+		
+		x.computeExtraLoss(loop.id)
+	})
+
+
+	x.computeAll()
+
+	console.log(x.loops)
+}
+
+
+
+
 // Run test
-test();
+//test2();

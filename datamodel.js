@@ -937,7 +937,7 @@ class DataModel {
 }
 
 
-function createTestModel() {
+/*function createTestModel() {
 
     var model = new DataModel();
 
@@ -998,3 +998,4 @@ function createTestModel() {
 
 createTestModel()
 
+*/
