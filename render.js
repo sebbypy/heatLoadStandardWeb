@@ -242,6 +242,7 @@ function renderAll(){
 
 function renderSpaceRow(table, space) {
     const row = table.insertRow(-1);  // Append row at the end of the table
+
     const heatingOptions = [
         { value: "radiators", label: "Radiateurs" },
         { value: "floorheating", label: "Sol" },
@@ -1084,8 +1085,8 @@ function renderMainTabs() {
     tabContainer.innerHTML = ''; // Clear existing tabs
 
 
-    //var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
-	var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results']
+    var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
+	//var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results']
 
 	var icons = [`<span class="material-symbols">space_dashboard</span>`,
 			`<span class="material-symbols">thermostat</span>`,
@@ -1202,7 +1203,7 @@ function renderRadiators(){
 			})
 	})
 
-	console.log(data)
+	//console.log(data)
 
 	renderTable(table,columns,data)
 
@@ -1287,10 +1288,13 @@ function setSpaceTabsColorBehavior(){
 
 
 function renderFloorHeating(){
+	// model = floorModel
+
 	
 	var div = document.getElementById("floorheating")
 	div.innerHTML=""
-	
+
+	//main structure
 	var content = createElement('div',{},'',[
 						createElement('h2',{"lang-key":"floor_heating"},'floor_heating',[]),
 						createElement('h3',{'lang-key':'spaces'},'spaces',[]),
@@ -1298,15 +1302,275 @@ function renderFloorHeating(){
 						createElement('h3',{'lang-key':'floor_system'},'floor_system',[]),
 						createElement('select',{'id':'floor_system_select'},'',[]),
 						createElement('h3',{'lang-key':'ref_loop'},'ref_loop',[]),
-						createElement('select',{'id':'ref_loop_select'},'',[])
+						//createElement('select',{'id':'ref_loop_select'},'',[]),
+						createElement('table',{'id':'ref_loop_table'},'',[]),
+						createElement('h3',{'lang-key':'loop_details'},'loop_details',[]),
+						createElement('table',{'id':'table_loops'},'',[]),
 						])
-
-
-	
-
 
 	div.append(content)
 	
+	renderFloorHeatingSpaces()
+	renderFloorHeatingSelects()
+	renderRefLoop()
+	renderLoopTable()
+
+}
+
+function renderFloorHeatingSpaces(){
+
+	//table of spaces
+	const columns = [
+		{ header: "name", type: "text", value: "name" },  
+		{ header: "heatload", type: "text", value: "heatload" },  
+		{ header: "area", type: "text", value: "area" },  
+		{ header: "netarea", 
+   		  type: "number", 
+		  value: "netarea", 
+		  step: 1,
+		  min: 1,
+		  max: "area",
+          oninput: (event, row) => handleChangeHeatedFloorArea(event, row)
+		},  
+		{ header: "hl_per_m2", type: "text", value: "hl_per_m2" },  
+		{ header: "grouped",
+		  type: "checkbox",
+		  onchange: (event,row) => handleGroupedFloorCheckbox(event,row)
+		},
+		{ header: "nloops", 
+   		  type: "number", 
+		  value: "nloops", 
+		  step: 1,
+		  min: 0,
+		  max: 5,
+		  oninput: (event, row) => handleChangeNumberOfFloorHeatingLoop(event, row)
+		},
+		{ header: "loops",
+		  type:"div", 
+		  id: "id"}
+
+	]		
+
+
+	var data = []
+
+	// creating table of spaces
+	for ([id,space] of Object.entries(floorModel.spaces)){
+		
+		data.push( {'name':space.name,
+					'spaceid':id,
+		            'heatload':space.heatLoad.toFixed(0),
+					'area':space.floorArea.toFixed(0),
+					'netarea':space.heatedFloorArea.toFixed(0),
+					'hl_per_m2':(space.heatLoad/space.heatedFloorArea).toFixed(1),
+					'grouped': null,
+					'nloops': space.loops.length,
+					'id': "div-loop-space-"+id}
+					)
+					
+	}
+	var table = document.getElementById('table_spaces_floor')
+	renderTable(table,columns,data)
+
+
+	//for each space, creating subtables with loop
+	for ([id,space] of Object.entries(floorModel.spaces)){
+		targetdiv = document.getElementById("div-loop-space-"+id)
+		renderSpaceLoops(floorModel,id,targetdiv)
+	}
+	
+	
+}
+
+function renderSpaceLoops(floorModel,spaceid,parentElement){
+		
+	space = floorModel.spaces[spaceid]
+	
+	
+	
+	
+	//loops = floorModel.loops
+	columns = [ {type:"text",value:"name"},
+		        {type:"number",
+				 value:"area",
+                 oninput: (event, row) => handleLoopWeightChange(event, row),
+				 min:1
+				 }
+			]
+
+	data = []
+		
+	space.loops.forEach( l => { 
+
+		loopid = l.loopid
+		loop = floorModel.getLoopById(loopid)
+		data.push({"name":loop.name,"area":l.weight.toFixed(1),"spaceid":spaceid,"loopid":loopid})
+		
+
+	})	
+	table = createElement('table',{},"",[])
+	parentElement.append(table)
+	
+	renderTable(table,columns,data,headerrow=false)
+	forceTwoEqualColumns(table)
+	
+}
+
+
+
+
+function renderFloorHeatingSelects(){
+	// render System select & ref loop Select
+	
+	var systemSelect = document.getElementById("floor_system_select")
+	
+	for (const [name, props] of Object.entries(floorModel.defaultSystems)) {
+		
+		var systemOption = createElement('option', { value:name }, name,[])
+		systemSelect.append(systemOption)
+	}
+	
+	systemSelect.value = floorModel.system
+	systemSelect.addEventListener("change",handleFloorSystemChange)
+	
+}
+
+function renderRefLoop(){
+
+	//headers=["loopname","heatedarea","totalheatload","hl_per_m2","mean_air_T","Rb","tubeSpacing"]
+
+	//table of spaces
+	const columns = [
+		{ header: "loopname",  
+		  type: "select", 
+		  value: "loopid",
+		  options: floorModel.loops.map(item => ({ value: item.id, label: item.name })) ,		
+		  onchange: (event, row) => handleRefLoopChange(event, row)
+		},
+		{ header: "heatedarea", type: "text", value: "heatedarea" },  
+		{ header: "totalheatload", type: "text", value: "totalheatload" },  
+		{ header: "hl_per_m2", type: "text", value: "hl_per_m2" },  
+		{ header: "mean_air_T", type: "text", value: "mean_air_T" },  
+		{ header: "Rb",
+		  type: "select", 
+		  value: "Rb",
+		  options: [{value:0.0,label:0.0},
+					{value:0.05,label:0.05},
+					{value:0.10,label:0.1},
+					{value:0.15,label:0.15}],		
+			onchange: (event, row) => handleLoopRChange(event, row)
+		},
+		{ header: "tubeSpacing",
+		  type: "select", 
+		  value: "tubeSpacing",
+		  options: [{value:5,label:5},
+					{value:10,label:10},
+					{value:15,label:15},
+					{value:20,label:20}],		
+			onchange: (event, row) => handleLoopSpacingChange(event, row)
+		},
+		{ header: "deltaH", type: "text", value: "deltaH" },  
+		{ header: "sigma", 
+		  type: "number", 
+		  value: "sigma",
+		  max: 6,
+		  min: 4,
+		  step: 1,
+		  oninput: handleRefSigmaChange
+		  },
+		{ header: "Tstart", type: "text", value: "Tstart" },  
+		{ header: "Treturn", type: "text", value: "Treturn"} 		  
+	]	
+
+	var data = []
+
+	floorModel.loops.forEach(loop => {
+		
+		if (loop.id == floorModel.refLoopid){
+		
+			data.push({"loopname":loop.name,
+						"loopid":loop.id,
+						"heatedarea":loop.stats.totalHeatedArea.toFixed(0),
+						"totalheatload":loop.stats.totalHeatLoad.toFixed(0),
+						"hl_per_m2":loop.stats.heatLoadPerSqMeter.toFixed(1),
+						"mean_air_T":loop.stats.meanAirTemperature.toFixed(1),
+						"Rb":loop.Rb,
+						"tubeSpacing":loop.tubeSpacing,
+						"deltaH":loop.stats.deltaH,
+						"sigma":floorModel.designDeltaT,
+						"Tstart":floorModel.supplyWaterTemperature.toFixed(1),
+						"Treturn":loop.stats.returnTemperature.toFixed(1)
+			})
+		}	
+		
+	})
+	
+	console.log("row data",data)
+	
+	renderTable(document.getElementById("ref_loop_table"),columns,data)
+	
+	
+}
+
+
+function renderLoopTable(){
+	
+	var table = document.getElementById("table_loops")
+	
+	//table of spaces
+	const columns = [
+		{ header: "loopname", type: "text", value: "loopname" },  
+		{ header: "heatedarea", type: "text", value: "heatedarea" },  
+		{ header: "totalheatload", type: "text", value: "totalheatload" },  
+		{ header: "hl_per_m2", type: "text", value: "hl_per_m2" },  
+		{ header: "mean_air_T", type: "text", value: "mean_air_T" },  
+		{ header: "Rb",
+		  type: "select", 
+		  value: "Rb",
+		  options: [{value:0.0,label:0.0},
+					{value:0.05,label:0.05},
+					{value:0.10,label:0.1},
+					{value:0.15,label:0.15}],		
+			onchange: (event, row) => handleLoopRChange(event, row)
+		},
+		{ header: "tubeSpacing",
+		  type: "select", 
+		  value: "tubeSpacing",
+		  options: [{value:5,label:5},
+					{value:10,label:10},
+					{value:15,label:15},
+					{value:20,label:20}],		
+			onchange: (event, row) => handleLoopSpacingChange(event, row)
+		},
+		{ header: "deltaH", type: "text", value: "deltaH" },  
+		{ header: "sigma", type: "text",  value: "sigma"},
+		{ header: "Tstart", type: "text", value: "Tstart" },  
+		{ header: "Treturn", type: "text", value: "Treturn"} 		  
+	]		
+	
+	var data = []
+	                
+
+	floorModel.loops.forEach(loop => {
+		console.log("loop ",loop)
+		data.push({"loopname":loop.name,
+					"loopid":loop.id,
+					"heatedarea":loop.stats.totalHeatedArea.toFixed(0) || 0,
+					"totalheatload":loop.stats.totalHeatLoad.toFixed(0),
+					"hl_per_m2":loop.stats.heatLoadPerSqMeter.toFixed(1),
+					"mean_air_T":loop.stats.meanAirTemperature.toFixed(1),
+					"Rb":loop.Rb,
+					"tubeSpacing":loop.tubeSpacing,
+					"deltaH":loop.stats.deltaH.toFixed(1),
+					"sigma":loop.stats.sigma.toFixed(1),
+					"Tstart":floorModel.supplyWaterTemperature.toFixed(1),
+					"Treturn":loop.stats.returnTemperature.toFixed(1),
+		})
+		
+		
+	})
+	
+	renderTable(table,columns,data)
 	
 	
 }

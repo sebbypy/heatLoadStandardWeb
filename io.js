@@ -44,6 +44,15 @@ function readRadiatorsModel(radiatorsJson){
 	radModel.computeAll()
 }
 
+function readFloorHeatingModel(){
+	
+	floorModel = new FloorHeatingModel();
+	floorModel.linkToModel(model);
+	floorModel.syncWithMainModel(model.spaces)
+	//floorModel.computeAll()
+}
+	
+
 
 function exportData(filename) {
 	
@@ -68,6 +77,7 @@ function loadModelFromJson(jsonData) {
 		
 		readHeatLoadModel(parsed.heatload)
 		readRadiatorsModel(parsed.radiators)
+		readFloorHeatingModel()
 		renderAll()
 	
     } catch (error) {

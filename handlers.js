@@ -275,5 +275,116 @@ function handleReturnTemperatureChange(e){
 
 
 
+// FLOOR HEATING
+
+function handleChangeNumberOfFloorHeatingLoop(e,row){
+	
+	/*console.log("adding or removing loop")
+	console.log(e.target)
+	console.log(row)*/
+		
+	if (e.target.value > row.nloops){
+		//console.log("ADD LOOP TO SPACE")
+		floorModel.addLoop("Loop "+row.name+" "+e.target.value,10, 0.10)
+	    floorModel.linkLoopToSpace(floorModel.numberOfLoops, row.spaceid);
+	}
+	
+	if (e.target.value < row.nloops){
+		console.log("REMOVE LOOP TO SPACE")
+		
+		var lastloopid = floorModel.spaces[row.spaceid].loops[row.nloops-1].loopid
+		
+		if (lastloopid == floorModel.refLoopid){
+			console.log("Cannot remove ref looop")
+			
+		}
+		else{
+			floorModel.unlinkLoopFromSpace(lastloopid,row.spaceid)
+			floorModel.deleteUnusedLoops()
+		}
+	}
+	
+	renderFloorHeating()
+	
+}
+
+function handleChangeHeatedFloorArea(e,row){
+		
+	floorModel.setHeatedFloorArea(row.spaceid,parseFloat(e.target.value))
+	renderFloorHeating()
+}
 
 
+function handleLoopWeightChange(e,row){
+	
+	/*console.log("changing loop weight")
+	console.log(e.target)
+	console.log(row)
+	*/	
+	floorModel.updateLoopWeight(row.loopid,row.spaceid,parseFloat(e.target.value))
+	floorModel.computeAll()
+	renderFloorHeating()
+	
+	
+}
+
+function handleFloorSystemChange(e){
+	
+	floorModel.setSystem(e.target.value)
+	renderFloorHeating()
+	
+	
+}
+
+function handleLoopRChange(e,row){
+	console.log("change Rb",e.target.value)
+	console.log("loopid",row.loopid)
+	floorModel.setLoopFloorResistance(row.loopid,parseFloat(e.target.value))
+	renderFloorHeating()
+	
+	
+}
+
+function handleRefLoopChange(e,row){
+	console.log("ref loop chang",row.loopid)
+	console.log("ref loop change traget",e.target.value)
+	floorModel.setRefLoop(e.target.value)
+	renderFloorHeating()
+	
+	
+}
+
+function handleLoopSpacingChange(e,row){
+	floorModel.setTubeSpacing(row.loopid,parseFloat(e.target.value))
+	renderFloorHeating()
+	
+	
+}
+
+function handleRefSigmaChange(e){
+	console.log("New sigma ",e.target.value)
+	floorModel.setDesignTemperatureDifference(parseFloat(e.target.value))
+	renderFloorHeating()
+	
+}
+
+
+function handleGroupedFloorCheckbox(e,row){
+	console.log("Grouped with other loop")
+	console.log(e)
+
+	if (e.target.checked){
+
+		console.log("space ",row.spaceid)
+	
+		floorModel.spaces[row.spaceid].loops.forEach(loop => {
+
+			floorModel.unlinkLoopFromSpace(loop.loopid,row.spaceid)
+		})
+		
+		floorModel.deleteUnusedLoops()
+
+	}
+	renderFloorHeating()
+	
+}

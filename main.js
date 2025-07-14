@@ -3,8 +3,9 @@ function loadPage(){
 	model = new DataModel();
 	radModel = new RadiatorsModel();
 	floorModel = new FloorHeatingModel();
-	radModel.linkToModel(model);
 
+	radModel.linkToModel(model);
+	floorModel.linkToModel(model);
 	
 	document.getElementById("main_container").innerHTML = ""
 	initializePage("main_container")

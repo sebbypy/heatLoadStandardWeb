@@ -62,18 +62,22 @@ function addCopyToAllButton(table,columnid,onclickfunction){
 
 
 
-function renderTable(table, columns, data) {
+function renderTable(table, columns, data, headerrow = true) {
 
     // Create header row
     const thead = document.createElement("thead");
-    const headerRow = document.createElement("tr");
-    columns.forEach(col => {
-        const th = document.createElement("th");
-        th.textContent = translate(col.header);
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
+
+	if (headerrow){
+		const headerRow = document.createElement("tr");
+		columns.forEach(col => {
+			const th = document.createElement("th");
+			th.textContent = translate(col.header);
+			headerRow.appendChild(th);
+		});
+		thead.appendChild(headerRow);
+	}
+    
+	table.appendChild(thead);
 
     // Create table body
     const tbody = document.createElement("tbody");
@@ -100,8 +104,8 @@ function renderTable(table, columns, data) {
 					//input.oninput = (e) => col.oninput(e, rowData);               
                 };
 				if (col.step){input.step = col.step}
-				if (col.min){input.min = col.min}
-				if (col.max){input.max = col.max}
+				if (col.min){if(typeof(col.min)=='string'){input.min = rowData[col.min]} else{input.min = col.min}}
+				if (col.max){if(typeof(col.max)=='string'){input.max = rowData[col.max]} else{input.max = col.max}}
                 td.appendChild(input);
             }
 			else if (col.type === "select") {
@@ -135,6 +139,18 @@ function renderTable(table, columns, data) {
 					td.appendChild(multilevelSelect2);
 				}
             }
+			else if (col.type == "div"){
+				const div = document.createElement("div")
+				div.id = rowData[col.id]
+				td.appendChild(div)
+			}
+			else if (col.type == "checkbox"){
+				console.log("CHECKBOX")
+				const cb = document.createElement("input")
+				cb.type = "checkbox"
+				cb.onchange = (e) => col.onchange(e,rowData)
+				td.appendChild(cb)
+			}
 
 
 
@@ -179,4 +195,23 @@ function addTotalRow(table, totals,nDecimals) {
 
     // Append the total row to the table
     table.appendChild(totalRow);
+}
+
+
+
+function forceTwoEqualColumns(table) {
+  //const table = document.getElementById(tableId);
+  //if (!table) return;
+
+  // Set table style
+  //table.style.width = '100%';
+  //table.style.tableLayout = 'fixed';
+
+  // Get all first row cells (assuming you only need to set widths once)
+  const firstRow = table.rows[0];
+  if (!firstRow) return;
+
+  for (let cell of firstRow.cells) {
+    cell.style.width = '50%';
+  }
 }
