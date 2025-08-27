@@ -39,7 +39,7 @@ class FloorHeatingModel {
 
 	getLoopById(loopid) {
 	    let loop = this.loops.find(l => l.id === loopid);
-		if (!loop) console.error(`Loop ID ${loopid} not found.`);
+		if (!loop) {console.error(`Loop ID ${loopid} not found.`); return null;}
 		return loop;
 	}
 
@@ -96,7 +96,7 @@ class FloorHeatingModel {
 		//this.supplyWaterTemperature = Math.ceil(numerator / denominator)
 		this.supplyWaterTemperature = numerator / denominator
 
-		console.log("supplyt T",theta_i,sigma,delta_theta_H_des)
+		//console.log("supplyt T",theta_i,sigma,delta_theta_H_des)
 
 
 		return numerator / denominator;
@@ -114,6 +114,27 @@ class FloorHeatingModel {
 		this.computeAll()
 
 	}
+	
+	ensureValidRefLoopId() {
+		// If refLoopid is not defined or is not in the list of loop IDs
+		const validIds = this.loops.map(l => l.id);
+		if (!this.refLoopid || !validIds.includes(this.refLoopid)) {
+			if (this.loops.length > 0) {
+				this.setRefLoop(this.loops[0].id); // default to first loop
+			} else {
+				this.refLoopid = null; // or leave undefined if no loops
+			}
+		}
+	}
+
+	getNumberOfLinkedSpaces(loopid){
+		var loop = getLoopById(loopid)
+		
+		return loop.spaces.length
+		
+	}
+	
+	
 
 	setSystem(systemName) {
 		if (!this.defaultSystems.hasOwnProperty(systemName)) {
@@ -220,7 +241,9 @@ class FloorHeatingModel {
 	}
 
     addSpace(name,spaceid, floorArea, spaceTemperature, heatLoad = 0) {
-        this.spaces[spaceid] = {
+		spaceid = Number(spaceid)
+
+        this.spaces[Number(spaceid)] = {
 			name: name,
             floorArea: floorArea,
             heatedFloorArea: floorArea,
@@ -232,6 +255,7 @@ class FloorHeatingModel {
     }
 
     editSpace(spaceid, floorArea, spaceTemperature, heatLoad) {
+		spaceid = Number(spaceid)
         this.spaces[spaceid].floorArea = floorArea
 		this.spaces[spaceid].temperature = spaceTemperature
 		this.spaces[spaceid].heatLoad = heatLoad
@@ -240,10 +264,11 @@ class FloorHeatingModel {
 
 	// to write
 	deleteSpace(spaceid){
+		spaceid = Number(spaceid)
 		console.log("in delete")
 		console.log(this.spaces[spaceid])
-		this.spaces[spaceid].loops.forEach(loopid => {
-			this.unlinkLoopFromSpace(loopid,space.id)
+		this.spaces[spaceid].loops.forEach(loop => {
+			this.unlinkLoopFromSpace(loop.loopid,spaceid)
 		})
 		
 		delete this.spaces[spaceid]
@@ -253,7 +278,7 @@ class FloorHeatingModel {
 		
 		this.deleteUnusedLoops()
 		this.computeAll()
-		console.log(this.spaces)
+		//console.log(this.spaces)
 
 		
 	}
@@ -266,7 +291,8 @@ class FloorHeatingModel {
             name: name || "Loop " + String(this.numberOfLoops),
             spaces: [],
 			Rb : Rb,
-			tubeSpacing : tubeSpacing
+			tubeSpacing : tubeSpacing,
+			Tu: 0
         };
         this.loops.push(loop);
 		
@@ -282,16 +308,21 @@ class FloorHeatingModel {
     }
 
     setHeatedFloorArea(spaceid, value) {
+		spaceid = Number(spaceid)
+
         if (this.spaces[spaceid]) {
             this.spaces[spaceid].heatedFloorArea = value;
         } else {
             console.error("Space ID not found:", spaceid);
         }
+		this.normalizeSpaceLoopWeights(spaceid,"proportional")
 		this.computeAll()
     }
 
 	setSpaceTemperature(spaceid,value)
 	{
+		spaceid = Number(spaceid)
+
 		if (this.spaces[spaceid]) {
             this.spaces[spaceid].temperature = value;
         } else {
@@ -315,6 +346,8 @@ class FloorHeatingModel {
     }
 
     linkLoopToSpace(loopid, spaceid, weight = null) {
+		spaceid = Number(spaceid)
+
         let loop = this.getLoopById(loopid);
         let space = this.spaces[spaceid];
 
@@ -327,45 +360,27 @@ class FloorHeatingModel {
             return;
         }
 
-        // Total area already assigned to loops
-        let assignedArea = space.loops.reduce((sum, l) => sum + l.weight, 0);
-
-        if (weight === null) {
-            // If no weight provided, evenly distribute across all loops (including this one)
-            let numLoops = space.loops.length + 1;
-            weight = space.heatedFloorArea / numLoops;
-
-            // Update all previous loops to share the space evenly
-            space.loops.forEach(l => l.weight = weight);
+        space.loops.push({"loopid":Number(loopid),"weight":weight}); //add loop in space 
+		
+        if (!loop.spaces.includes(Number(spaceid))) {
+            loop.spaces.push(Number(spaceid));  // add space in loop
         }
-
-        // If space is fully assigned, rebalance existing loops
-        if (assignedArea + weight > space.heatedFloorArea) {
-            let numLoops = space.loops.length + 1; // Including this new one
-            let newWeight = space.heatedFloorArea / numLoops;
-
-            // Update existing loops
-            space.loops.forEach(l => l.weight = newWeight);
-
-            // Apply the same weight to the new loop
-            weight = newWeight;
-        }
-
-        // Add the new loop assignment
-        space.loops.push({
-            loopid,
-            weight
-        });
-
-        // Ensure loop knows the space is linked
-        if (!loop.spaces.includes(spaceid)) {
-            loop.spaces.push(spaceid);
-        }
+		
+		if (weight == null){
+			this.normalizeSpaceLoopWeights(spaceid,"equal")
+		}
+		else{
+			this.normalizeSpaceLoopWeights(spaceid,"residual",{"fixedLoopId":loopid,"fixedWeight":weight})
+		}
+		
+		
 		this.computeAll()
     }
 
     unlinkLoopFromSpace(loopid, spaceid) {
-        let loop = this.getLoopById(loopid);
+		spaceid = Number(spaceid)
+
+		let loop = this.getLoopById(loopid);
         let space = this.spaces[spaceid];
 
         if (!loop) {
@@ -384,28 +399,24 @@ class FloorHeatingModel {
             return;
         }
 
-        let removedWeight = space.loops[loopIndex].weight;
         space.loops.splice(loopIndex, 1); // Remove the loop from space
 
         // Remove space from loop's list if no other references exist
-		console.log("before",loop,spaceid,typeof(spaceid))
         loop.spaces = loop.spaces.filter(id => id != spaceid);
-		console.log("after",loop,spaceid)
 
         // If no loops remain, error out (should not happen in normal usage)
-        if (space.loops.length === 0) {
+        /*if (space.loops.length === 0) {
             console.error(`Cannot unlink Loop ${loopid} from Space ${spaceid}: At least one loop must remain.`);
             return;
-        }
+        }*/
 
-        // Redistribute the removed weight evenly among remaining loops
-        let numRemainingLoops = space.loops.length;
-        space.loops.forEach(l => l.weight += removedWeight / numRemainingLoops);
+		this.normalizeSpaceLoopWeights(spaceid, "proportional");
 		this.computeAll()
     }
 
 	createLoopForNewSpace(spaceid){
-		
+		spaceid = Number(spaceid)
+
 		this.addLoop("Loop "+this.spaces[spaceid].name); // Create a new loop
 		let newLoopId = this.numberOfLoops; // Get the latest loop ID
 		let initialWeight = this.spaces[spaceid].heatedFloorArea; // Assign full area at first
@@ -415,7 +426,7 @@ class FloorHeatingModel {
 		this.setTubeSpacing(newLoopId,10)
 		this.setLoopFloorResistance(newLoopId,0.1)
 		this.setLoopResistances(newLoopId,0.05,0.14)
-		
+		this.setLoopL0(newLoopId,5)
 
 		this.computeAll()
 	}
@@ -461,55 +472,14 @@ class FloorHeatingModel {
     }
 
     updateLoopWeight(loopid, spaceid, newWeight) {
-       
-        /*let space = this.spaces[spaceid];
-        if (!space) {
-            console.error(`Space ID ${spaceid} not found.`);
-            return;
-        }
-
-        let loopEntryIndex = space.loops.findIndex(l => l.loopid === loopid);
-        if (loopEntryIndex === -1) {
-            console.error(`Loop ID ${loopid} is not linked to Space ${spaceid}.`);
-            return;
-        }
-
-        let loopEntry = space.loops[loopEntryIndex];
-        let totalAssignedArea = space.loops.reduce((sum, l) => sum + l.weight, 0);
-
-        // If there is only one loop, directly set its weight to the full area
-        if (space.loops.length === 1) {
-            console.warn(`Loop ${loopid} is the only loop. Setting weight to full space area.`);
-            loopEntry.weight = space.heatedFloorArea;
-            return;
-        }
-
-        let lastLoopIndex = space.loops.length - 1;
-        let lastLoop = space.loops[lastLoopIndex];
-
-        // If the last loop is being modified, adjust the second-to-last loop instead
-        let compensationLoopIndex = loopEntryIndex === lastLoopIndex ? lastLoopIndex - 1 : lastLoopIndex;
-        let compensationLoop = space.loops[compensationLoopIndex];
-
-        let weightDifference = newWeight - loopEntry.weight;
-        let newCompensationWeight = compensationLoop.weight - weightDifference;
-
-        if (newCompensationWeight < 0) {
-            console.warn(`Adjustment exceeds available area. Adjusting ${loopid} to max possible weight.`);
-            newWeight = loopEntry.weight + compensationLoop.weight;
-            newCompensationWeight = 0;
-        }
-
-        // Apply weight changes
-        loopEntry.weight = newWeight;
-        compensationLoop.weight = newCompensationWeight;*/
-		
+      	
 		this.normalizeSpaceLoopWeights(spaceid,"residual",{"fixedLoopId":loopid,"fixedWeight":newWeight})
 		
     }
 	
 	
 	normalizeSpaceLoopWeights(spaceid, mode = "proportional", options = {}) {
+		spaceid = Number(spaceid)
 		let space = this.spaces[spaceid];
 		if (!space) {
 			console.error(`Space ID ${spaceid} not found.`);
@@ -552,6 +522,12 @@ class FloorHeatingModel {
 
 		// --- Mode: "residual" --- (explicitly changing loop weight)
 		if (mode === "residual") {
+			if (loops.length === 1) {
+				loops[0].weight = totalArea;
+			return;
+			}
+
+			
 			const fixedLoopId = options.fixedLoopId;
 			const fixedWeight = options.fixedWeight;
 
@@ -562,6 +538,7 @@ class FloorHeatingModel {
 			}
 
 			// Assign fixed weight
+			const oldWeight = fixedLoop.weight  //keep old weight in memory to cancel operation if needed
 			fixedLoop.weight = fixedWeight;
 
 			// Identify residual loop
@@ -587,11 +564,9 @@ class FloorHeatingModel {
 			let totalFixed = loops.reduce((sum, l) => (l.loopid !== residualLoop.loopid ? sum + l.weight : sum), 0);
 			let residualArea = totalArea - totalFixed;
 
-			if (residualArea < 0) {
-				// Fixed weights exceed area: reduce fixedLoop weight
-				fixedLoop.weight += residualArea; // residualArea negative, so reduces weight
-				residualLoop.weight = 0;
-				console.warn(`Fixed loop weight reduced to fit total heated area.`);
+			if (residualArea < 1) {
+				console.warn(`Weight of residual loop may become < 1, canceling`);
+				fixedLoop.weight = oldWeight
 			} else {
 				residualLoop.weight = residualArea;
 			}
@@ -632,8 +607,10 @@ class FloorHeatingModel {
 
 	setLoopL0(loopid,value)
 	{
+		if (loopid != null){
 		let loop = this.getLoopById(loopid);
 		loop.L0 = value
+		}
 	}
 
 	computeLoopsLength(){
@@ -688,7 +665,7 @@ class FloorHeatingModel {
 	
 	computeAll(){
 		
-		console.log("Compute ALL FLOOR HEATING")
+		//console.log("Compute ALL FLOOR HEATING")
 		
 		 if (!this.isDataComplete()) {
 			 console.log("incomplete data")
@@ -713,23 +690,31 @@ class FloorHeatingModel {
 	}	
 		
 	idExistsInThisModel(spaceid){
+		spaceid = Number(spaceid)
+
 		return (spaceid in this.spaces)
 	}
 	
 		
 	
 	linkToModel(mainModel){
-		console.log("linking floor model to main")
+		//console.log("linking floor model to main")
 		mainModel.subscribe("heatload_changed", (mainModel) => {this.syncWithMainModel(mainModel.spaces)});
 		mainModel.subscribe("spaces", (mainModel) => {this.syncWithMainModel(mainModel.spaces)});
 	}
 	
 	syncWithMainModel(hl_spaces){
 		console.log("syncing floorheating")
+
+		var hasFloorHeating = false
 		
 		hl_spaces.forEach( space => {
 
+			console.log("Loop ",space.name)
+
 			if (space.heating_type == "floorheating"){
+
+				hasFloorHeating = true
 
 				if (!this.system){
 					this.setSystem(Object.keys(this.defaultSystems)[0])
@@ -738,45 +723,51 @@ class FloorHeatingModel {
 
 				if (this.idExistsInThisModel(space.id)){
 
-					console.log("space ",space.id,"exists in floor model")
+
+					//console.log("space ",space.id,"exists in floor model")
 				    //this.setSpaceName(space.id,space.name)
 					//this.setSpaceHeatLoad(space.id,space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power,space.temperature)			
 					//this.setSpaceTemperature(space.id,space.temperature)
+					console.log("EDIT in floor model",this.spaces[space.id])
+					
 					this.editSpace(space.id,space.floorarea,space.temperature,space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power)
 					
 				}
 				else{
-					console.log("add space in model")
+					console.log("ADD Space in floor model",space.name)
 					//this.addSpace(space.id,space.name,space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power,space.temperature)  // rad
 					this.addSpace(space.name,space.id, space.floorarea, space.temperature, space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power)
 					this.createLoopForNewSpace(space.id)
-
-					if (!this.refLoopid){ // if does not exist, set it to first
-						this.setRefLoop(this.spaces[space.id].loops[0].loopid)
-					}
 
 
 					}
 
 					
 			}
-			/*else{
+			else{
 				//check it's an actual space and not a bc
-				if (space.type == "heated"){
-					console.log("Delete space from floor model",space.id)
+				if (this.idExistsInThisModel(space.id)){
+					console.log("DELETE space from floor model",space.name)
 					this.deleteSpace(space.id)
 				}
-			}*/
+			}
 		})
 		
 		//loop current space to delete them if not in main model
 		Object.keys(spaces).forEach(id => {
 			if (!this.idExistsInMainModel(id,hl_spaces)){
+				console.log("DELETE space",id,"that does not exist anymore in mail model")
 				this.deleteSpace(id)
 			}
 		})
 		
-		this.computeAll()
+		if (hasFloorHeating){
+		
+			this.ensureValidRefLoopId()
+		
+			this.deleteUnusedLoops()
+			this.computeAll()
+		}
 	}
 
 	

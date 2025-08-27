@@ -87,13 +87,28 @@ function renderTable(table, columns, data, headerrow = true) {
 
         columns.forEach(col => {
             const td = document.createElement("td");
+			
+
 
             if (col.type === "text") {
                 td.textContent = typeof col.value === "function" ? col.value(rowData) : rowData[col.value];
 
             } 
+            else if (col.type === "textinput") {
+                var input = document.createElement("input");
+                input.type = "text";
+                input.value = rowData[col.value] || '';
+                input.onchange = (e) => {
+					col.onchange(e,rowData)
+				}
+				td.appendChild(input);
+
+            } 
+						
+			
+			
 			else if (col.type === "number") {
-                const input = document.createElement("input");
+                var input = document.createElement("input");
                 input.type = "number";
                 input.value = rowData[col.value] || 0;
                 input.oninput = (e) => {
@@ -103,13 +118,14 @@ function renderTable(table, columns, data, headerrow = true) {
                     //console.log(`Updated ${col.header} for ${rowData.spaceType} to`, e.target.value);
 					//input.oninput = (e) => col.oninput(e, rowData);               
                 };
-				if (col.step){input.step = col.step}
-				if (col.min){if(typeof(col.min)=='string'){input.min = rowData[col.min]} else{input.min = col.min}}
-				if (col.max){if(typeof(col.max)=='string'){input.max = rowData[col.max]} else{input.max = col.max}}
+				if (col.min !== undefined){input.step = col.step}
+				if (col.min !== undefined){if(typeof(col.min)=='string'){input.min = rowData[col.min]} else{input.min = col.min}}
+				if (col.max !== undefined){if(typeof(col.max)=='string'){input.max = rowData[col.max]} else{input.max = col.max}}
+				if (col.disabled !== undefined){input.disabled = rowData[col.disabled];}
                 td.appendChild(input);
             }
 			else if (col.type === "select") {
-                const select = document.createElement("select");
+                var select = document.createElement("select");
                 
                 col.options.forEach(option => {
                     const opt = document.createElement("option");
@@ -124,7 +140,7 @@ function renderTable(table, columns, data, headerrow = true) {
                 if (col.onchange) {
                     select.onchange = (e) => col.onchange(e, rowData);
                 }
-
+				if (col.class) {select.classList.add(col.class)}
                 td.appendChild(select);
             }
 			 else if (col.type === "multilevelselect") {
@@ -145,10 +161,13 @@ function renderTable(table, columns, data, headerrow = true) {
 				td.appendChild(div)
 			}
 			else if (col.type == "checkbox"){
-				console.log("CHECKBOX")
+				console.log("CHECKBOX ",col)
 				const cb = document.createElement("input")
 				cb.type = "checkbox"
+				cb.checked = rowData[col.value]
 				cb.onchange = (e) => col.onchange(e,rowData)
+				if (col.disabled !== undefined){ console.log(col.disabled) ;if (typeof(col.disabled) == "string") {console.log("STRING", rowData[col.disabled]);cb.disabled = rowData[col.disabled];} else {console.log("NOT STRING"); cb.disabled = col.disabled}}
+
 				td.appendChild(cb)
 			}
 

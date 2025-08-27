@@ -313,3 +313,10 @@ table th {
     padding: 20px;
     /*background-color: #ffffff;*/ /* White background */
 }
+
+
+.narrow-select{
+	width:auto;
+	
+	
+}

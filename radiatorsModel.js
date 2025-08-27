@@ -17,7 +17,8 @@ class RadiatorsModel{
 			temperature: temperature,
 			exponent: exponent,
 			correctionFactor: correctionFactor,
-			refPower:null
+			refPower:null,
+			mh_kg_s: null
 		 })
 	}	
 	
@@ -68,6 +69,7 @@ class RadiatorsModel{
 			var thetaM = (this.startTemperature-this.returnTemperature)/Math.log((this.startTemperature-space.temperature)/(this.returnTemperature-space.temperature))
 			var ratio =  Math.pow(thetaM/49.83,space.exponent)
 			space.refPower = space.heatLoad/ratio/space.correctionFactor
+			space.mh_kg_s = space.heatLoad/(4180*(this.startTemperature-this.returnTemperature))
 
 		})
 	}
@@ -157,7 +159,7 @@ class RadiatorsModel{
 
 	linkToModel(mainModel){
 		//console.log("linking model")
-        mainModel.subscribe("heaload_changed", (mainModel) => {this.syncWithMainModel(mainModel.spaces)});
+        mainModel.subscribe("heatload_changed", (mainModel) => {this.syncWithMainModel(mainModel.spaces)});
         mainModel.subscribe("spaces", (mainModel) => {this.syncWithMainModel(mainModel.spaces)});
 
 	}

@@ -2,7 +2,8 @@ async function exportPageToPDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
 
-	pdf.setFont("helvetica")
+	//pdf.setFont("roboto")
+	pdf.setFont("roboto")
 
     const pageWidth = 180; // Max width for text (A4 = 210mm, with margins)
     const pageHeight = 280; // A4 page height (297mm, leaving bottom margin)
@@ -19,15 +20,28 @@ async function exportPageToPDF() {
 	await addLogos(pdf)
 
 
+	var divsToSkip = evaluateDivsToSkip()
+
+	prepareForExport() // fixing some UI elements before exporting
+	
 
     for (const element of reorderedElements) {
+
+		if (divsToSkip.some(divid => document.getElementById(divid).contains(element))) {
+            continue;
+        }
+
 		
 		if (window.getComputedStyle(element).display === "none") {
+			console.log("SKIP",element)
 			continue; // Skip this iteration
 		}        
+		else {
+			console.log("ELEMENT ",element)
+		}
 		if (["H1", "H2", "H3"].includes(element.tagName)) {
 			blackText(pdf)
-			pdf.setFont("helvetica","bold")
+			pdf.setFont("roboto","bold")
 
             yPosition = checkNewPage(pdf,yPosition,pageHeight)
 			
@@ -37,7 +51,7 @@ async function exportPageToPDF() {
             //pdf.setFontSize(element.tagName === "H3" ? 24 : 18);
             pdf.text(element.innerText, 15, yPosition);
             yPosition += 10;
-			pdf.setFont("helvetica","normal")
+			pdf.setFont("roboto","normal")
 
         } 
 		
@@ -98,9 +112,8 @@ async function exportPageToPDF() {
             // Ensure page split before adding table if needed
             yPosition = checkNewPage(pdf,yPosition,pageHeight)
 
-			console.log(processedTable[0])
-			
-			console.log(processedTable.slice(1))
+			//console.log(processedTable[0])
+			//console.log(processedTable.slice(1))
 			
 
 			pdf.autoTable({
@@ -487,3 +500,30 @@ async function exportToWord() {
     URL.revokeObjectURL(url);
 
 }
+
+
+
+function evaluateDivsToSkip(){
+	
+	var toSkip = []
+	
+	if (Object.keys(floorModel.spaces).length == 0){
+		toSkip.push("floorheating")
+	}
+	if (radModel.spaces.length == 0){
+		toSkip.push("radiators")
+	}
+
+	console.log("to skip",toSkip)
+	return toSkip
+	
+}
+
+function prepareForExport(){
+	// setting the system editor select to the same value, so that it is ok when exporting
+	document.getElementById("floorsystemeditor-select").value = document.getElementById("floor_system_select").value
+	renderSelectedSystemData(document.getElementById("floorsystemeditor-select"))
+}
+
+
+

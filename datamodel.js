@@ -30,7 +30,10 @@ class DataModel {
 			'transferFlowCalculation':'detailled',
 			'transferCounter': 0,
 		}
-		this.subscribers = {}
+		this.subscribers = {},
+		this.heatingOptions= ['radiators','floorheating','equilibrium','air_without_destratification','air_with_destratification','radiant_ceiling','radiant_tubes','infrared_radiant']
+//		const heatingOptions = [    { value: "radiators", label: "Radiateurs" },        { value: "floorheating", label: "Sol" },        { value: "equilibrium", label: "No heating" }
+
 
     }
     createNewSpace(name) {
@@ -39,8 +42,11 @@ class DataModel {
             name: name,
             id: this.spaceIdCounter,
             temperature: 20,
+			gradient: 0,
+			delta_rad: 0,
             floorarea: 10,
             volume: 25,
+			averageHeight : 2.5,
             heating_type: "radiators",
             bc_type: null,
             transmission_heat_loss: 0,
@@ -95,9 +101,49 @@ class DataModel {
 	    const space = this.spaces.find(space => space.id === spaceId);
 		if (space) {
 			space[property] = isNaN(Number(value)) ? value : Number(value);
+			
+			if (["volume", "floorarea"].includes(property)) {
+				space['averageHeight'] = space['volume']/space['floorarea']
+			}
+
+			
+			if (property == 'heating_type'){
+				this.updateNA6Data(space)
+			}
+
+			
+			
+			
 		}
 		this.computeAll()
 		this.notifySubscribers('spaces',this)
+
+	}
+
+	updateNA6Data(space){
+
+		var gradients = {'radiators':1,
+						'floorheating':0.20,
+						'equilibrium':0,
+						'air_without_destratification':1.0,
+						'air_with_destratification':0.35,
+						'radiant_ceiling':0.35,
+						'radiant_tubes':0.20,
+						'infrared_radiant':0.20}
+
+		var delta_rad = {'radiators':0.0,
+						'floorheating':1.5,
+						'equilibrium':0,
+						'air_without_destratification':0.0,
+						'air_with_destratification':0.0,
+						'radiant_ceiling':1.5,
+						'radiant_tubes':1.5,
+						'infrared_radiant':1.5}
+
+
+		space.gradient = gradients[space.heating_type]
+		space.delta_rad = delta_rad[space.heating_type]
+		
 
 	}
 
@@ -124,14 +170,18 @@ class DataModel {
     }
 
     createNewWallInstance(spaceId) {
-        this.wallInstanceID += 1;
-        const newWallInstance = {
-            id: this.wallInstanceID,
-            spaces: [spaceId], // Initially only include the current space
-            elementId: "", // Initialize without a type
-            Area: 0, // Initialize with zero area
-            transmissionLoss: 0 // Initialize with zero transmission loss
-        };
+		var space = this.getSpace(spaceId)
+		this.wallInstanceID += 1;
+		const newWallInstance = {
+		  id: this.wallInstanceID,
+		  spaces: [spaceId],
+		  elementId: "",
+		  Area: 0,
+		  transmissionLoss: 0,
+		  wallHeights: space?.averageHeight
+			? { [spaceId]: space.averageHeight / 2 }
+			: {}
+		};
         this.wallInstances.push(newWallInstance);
         //console.log(this.wallInstances)
     }
@@ -230,6 +280,8 @@ class DataModel {
 			} else {
 				wallInstance.spaces[1] = newSpaceId; // Replace existing linked space
 			}
+			var space = this.getSpace(newSpaceId)
+			space?.averageHeight ? (wallInstance.wallHeights[newSpaceId] = space.averageHeight/2) : (wallInstance.wallHeights[newSpaceId] = 0)
 			
 		} else {
 			console.error('Mur not found with id:', wallId);
@@ -237,11 +289,61 @@ class DataModel {
 
 		this.computeAll()
 	}
+	
+	changeWallInstanceHeight(wallId, spaceId, newHeight){
+		wallId = Number(wallId);  // Convert to number
+		spaceId = Number(spaceId);
+
+		const wallInstance = this.wallInstances.find(m => m.id === wallId);
+		if (wallInstance) {
+		  wallInstance.wallHeights[spaceId] = Number(newHeight)
+			
+		} else {
+			console.error('wall not found with id:', wallId);
+		}
+
+		this.computeAll()
+	}
+	
+	
+	
 
 	deleteWallInstance(wallInstanceId){
 		this.wallInstances = this.wallInstances.filter(wall => wall.id !== wallInstanceId);
 		this.computeAll()
 	}
+
+
+	computeWallInstanceInsideTemperature(wallInstance,spaceId){
+		
+		const space = this.spaces.find(s => s.id === spaceId);
+		
+		if (space){
+		
+			if (! space?.averageHeight){
+				return space.temperature
+			}
+		
+			if (space.averageHeight < 4){
+				return space.temperature
+			}
+			else{
+				
+				var baseT = parseFloat(space.temperature)
+				var grad = 1.
+				var hm = wallInstance.wallHeights[spaceId]
+				
+				return baseT + grad*(hm-1)
+			}
+		
+		}
+		else{
+			return null
+		}
+		
+		
+	}
+
 
     computeWallInstanceLoss(wallInstance) {
 
@@ -250,8 +352,7 @@ class DataModel {
 
             // Find the temperatures of the connected this.spaces
             const spaceTemps = wallInstance.spaces.map(spaceId => {
-                const space = this.spaces.find(s => s.id === spaceId);
-                return space ? parseFloat(space.temperature) : null;
+                return this.computeWallInstanceInsideTemperature(wallInstance,spaceId);
             });
 
         // Ensure we have two valid temperatures before computing the heat loss
@@ -887,7 +988,7 @@ class DataModel {
 		this.computeAllVentilationLosses()
 		this.computeReheat()
 		
-		this.notifySubscribers("heaload_changed",this)	
+		this.notifySubscribers("heatload_changed",this)	
 		
 	}
 	
@@ -927,7 +1028,7 @@ class DataModel {
 	}
 
 	notifySubscribers(event, value) {
-		console.log("notify value")
+		//console.log("notify value",value)
 		if (this.subscribers[event]) {
 			this.subscribers[event].forEach(callback => callback(value));
 		}

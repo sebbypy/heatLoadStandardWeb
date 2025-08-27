@@ -1,7 +1,8 @@
 function packModels(){
 	
 	return {'heatload':model,
-			'radiators':radModel}
+			'radiators':radModel,
+			'floor':floorModel}
 			
 }
 
@@ -44,12 +45,85 @@ function readRadiatorsModel(radiatorsJson){
 	radModel.computeAll()
 }
 
-function readFloorHeatingModel(){
+/*function readFloorHeatingModel(floorJson){
 	
 	floorModel = new FloorHeatingModel();
+
+    // If JSON data provided, load and set properties
+    if (floorJson && floorJson.spaces && floorJson.loops) {
+        // Add spaces
+        for (let spaceId in floorJson.spaces) {
+            const s = floorJson.spaces[spaceId];
+            floorModel.addSpace(s.name, Number(spaceId), s.floorArea, s.temperature, s.heatLoad);
+            floorModel.spaces[spaceId].heatedFloorArea = s.heatedFloorArea;
+            floorModel.spaces[spaceId].radiator = s.radiator;
+        }
+
+        // Add loops
+        floorJson.loops.forEach(loopData => {
+            floorModel.numberOfLoops = Math.max(floorModel.numberOfLoops, loopData.id);
+            let loop = {
+                id: loopData.id,
+                name: loopData.name,
+                spaces: loopData.spaces || [],
+                Rb: loopData.Rb,
+                tubeSpacing: loopData.tubeSpacing,
+                stats: loopData.stats || {},
+                L0: loopData.L0,
+                R0: loopData.R0,
+                Ru: loopData.Ru,
+                Tu: loopData.Tu,
+                length: loopData.length
+            };
+            floorModel.loops.push(loop);
+        });
+
+        // Re-attach loops to spaces
+        for (let spaceId in floorJson.spaces) {
+            const s = floorJson.spaces[spaceId];
+            s.loops.forEach(l => {
+                let loop = floorModel.getLoopById(l.loopid);
+                if (loop && !loop.spaces.includes(Number(spaceId))) {
+                    loop.spaces.push(Number(spaceId));
+                }
+            });
+        }
+
+        // Copy system, designDeltaT, refLoop, etc.
+        if (floorJson.system) floorModel.system = floorJson.system;
+        if (floorJson.designDeltaT !== undefined) floorModel.designDeltaT = floorJson.designDeltaT;
+        if (floorJson.refLoopid) floorModel.refLoopid = floorJson.refLoopid;
+		if (floorJson.supplyWaterTemperature !== undefined) floorModel.supplyWaterTemperature = floorJson.supplyWaterTemperature 
+        // Recompute all
+        //floorModel.computeAll();
+
+    }
+	
 	floorModel.linkToModel(model);
 	floorModel.syncWithMainModel(model.spaces)
-	//floorModel.computeAll()
+	floorModel.computeAll()
+}
+*/
+
+function readFloorHeatingModel(floorJson) {
+    floorModel = new FloorHeatingModel();
+
+    if (floorJson && floorJson.spaces && floorJson.loops) {
+        floorModel.spaces = floorJson.spaces;
+        floorModel.loops = floorJson.loops;
+        floorModel.numberOfLoops = floorJson.numberOfLoops || floorJson.loops.length;
+        floorModel.system = floorJson.system;
+        floorModel.designDeltaT = floorJson.designDeltaT;
+        floorModel.refLoopid = floorJson.refLoopid;
+		floorModel.supplyWaterTemperature = floorJson.supplyWaterTemperature 
+        
+		floorModel.defaultSystems = floorJson.defaultSystems
+		
+        floorModel.linkToModel(model);
+        floorModel.syncWithMainModel(model.spaces);
+        floorModel.computeAll();
+	}
+    
 }
 	
 
@@ -72,17 +146,18 @@ function exportData(filename) {
 }
 
 function loadModelFromJson(jsonData) {
-    try {
+    //try {
         const parsed = JSON.parse(jsonData);
 		
 		readHeatLoadModel(parsed.heatload)
 		readRadiatorsModel(parsed.radiators)
-		readFloorHeatingModel()
+		readFloorHeatingModel(parsed.floor)
 		renderAll()
 	
-    } catch (error) {
-        alert("Error loading or parsing data: " + error.message);
-    }
+    //} catch (error) {
+    //    console.log("Error loading or parsing data: " + error);
+    //    alert("Error loading or parsing data: " + error.message+" "+error.fileName+" "+error.lineNumber);
+    //}
 }
 
 
@@ -101,12 +176,13 @@ function importData() {
 
     const reader = new FileReader();
     reader.onload = function(event) {
-        try {
+        //try {
 			loadModelFromJson(event.target.result)
             
-        } catch (error) {
-            alert("Error loading or parsing the file: " + error.message);
-        }
+        /*} catch (error) {
+        console.log("Error loading or parsing data: " + error);
+        alert("Error loading or parsing data: " + error.message+" "+error.fileName+" "+error.lineNumber);
+        }*/
     };
     reader.onerror = function() {
         alert("Failed to read the file.");
@@ -131,6 +207,8 @@ function loadModelFromLocalStorage() {
     } else {
         console.log("No saved model found in local storage.");
     }
+	//switchLanguage(getCurrentLanguage())
+
 }
 
 
@@ -293,6 +371,8 @@ window.addEventListener('load', () => {
             loadModelFromJson(jsonData);
         //}
     }
+	switchLanguage(getCurrentLanguage())
+
 });
 
 
