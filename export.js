@@ -1,9 +1,14 @@
+
+
+
 async function exportPageToPDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
 
-	//pdf.setFont("roboto")
-	pdf.setFont("roboto")
+
+
+	pdf.setFont("Roboto")
+	//pdf.setFont("Roboto")
 
     const pageWidth = 180; // Max width for text (A4 = 210mm, with margins)
     const pageHeight = 280; // A4 page height (297mm, leaving bottom margin)
@@ -39,9 +44,14 @@ async function exportPageToPDF() {
 		else {
 			console.log("ELEMENT ",element)
 		}
+
+		yPosition = checkFloorSection(pdf,yPosition,element)
+			
+
+
 		if (["H1", "H2", "H3"].includes(element.tagName)) {
 			blackText(pdf)
-			pdf.setFont("roboto","bold")
+			pdf.setFont("Roboto","bold")
 
             yPosition = checkNewPage(pdf,yPosition,pageHeight)
 			
@@ -51,7 +61,7 @@ async function exportPageToPDF() {
             //pdf.setFontSize(element.tagName === "H3" ? 24 : 18);
             pdf.text(element.innerText, 15, yPosition);
             yPosition += 10;
-			pdf.setFont("roboto","normal")
+			pdf.setFont("Roboto","normal")
 
         } 
 		
@@ -119,7 +129,7 @@ async function exportPageToPDF() {
 			pdf.autoTable({
 				head: [processedTable[0]], // First row as header (unchanged)
 				body: processedTable.slice(1), // Remaining rows as data
-				styles: { halign: "center" }, // Default alignment for all columns (center)
+				styles: { font:"Roboto",halign: "center" }, // Default alignment for all columns (center)
 				headStyles:{
 					fillColor: [0,135,183]
 				},
@@ -208,7 +218,31 @@ function checkNewPage(pdf,yPosition,pageHeight){
 		pdf.addPage();
 		yPosition = 25;
 	}
+
 	return yPosition
+}
+
+function checkFloorSection(pdf,yPosition,el){
+
+	if (el.hasAttribute("lang-key")){
+	
+	if (el.getAttribute("lang-key") == "floor_heating"){
+			pdf.addPage("a4","landscape");
+			yPosition = 25;
+		}
+
+	if (el.getAttribute("lang-key") == "floorsystems"){
+			pdf.addPage("a4","portrait");
+			yPosition = 25;
+		}
+
+
+
+	
+	}
+	return yPosition
+
+
 }
 
 

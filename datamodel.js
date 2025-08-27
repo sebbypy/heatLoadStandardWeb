@@ -861,6 +861,10 @@ class DataModel {
     computeEquilibriumTemperatures() {
         // solve only for those who are not directly heated
 
+		// for now, only considers the "reference" temperature, aka, for spaces < 4m. 
+		// for spaces > 4m, it should take into account the temperature variations, but not yet implemented
+
+
         const {
             totalNaturalSupplyFlowrate,
             totalMechanicalSupplyFlowrate,
