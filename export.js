@@ -5,17 +5,16 @@ async function exportPageToPDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
 
-
-
 	pdf.setFont("Roboto")
-	//pdf.setFont("Roboto")
 
     const pageWidth = 180; // Max width for text (A4 = 210mm, with margins)
     const pageHeight = 280; // A4 page height (297mm, leaving bottom margin)
     let yPosition = 60; // Start Y position for content
 
 	const parentDiv = document.querySelector(".content"); // Replace with your target div
-	var elements = parentDiv.querySelectorAll("h1, h2, h3, table,p, span:not(table span), select:not(table select), input:not(table input)");
+	
+	// selector to get "top" level items, but not nested items (i.e. not element in tables. They are dealt recursively"
+	var elements = parentDiv.querySelectorAll("h1, h2, h3, table:not(table table),p, span:not(table span), select:not(table select), input:not(table input)"); 
 
 	// move results and header on top
 	var reorderedElements = moveElementById(Array.from(elements), "heatloss_table", 1); 
@@ -38,16 +37,15 @@ async function exportPageToPDF() {
 
 		
 		if (window.getComputedStyle(element).display === "none") {
-			console.log("SKIP",element)
+			//console.log("SKIP",element)
 			continue; // Skip this iteration
 		}        
-		else {
+		/*else {
 			console.log("ELEMENT ",element)
-		}
+			//continue
+		}*/
 
 		yPosition = checkFloorSection(pdf,yPosition,element)
-			
-
 
 		if (["H1", "H2", "H3"].includes(element.tagName)) {
 			blackText(pdf)
@@ -66,65 +64,11 @@ async function exportPageToPDF() {
         } 
 		
         else if (element.tagName === "TABLE") {
-			const processedTable = [];
-			const colorTable = []; // Sister array for colors (only for the body)
-
-			var headers = Array.from(element.rows)[0]
-				
-			var currentCol = 0
-
-			Array.from(element.rows).forEach((row, rowIndex) => {
-				const rowData = [];
-
-				currentCol = 0;
-							
-				// Only generate colors for the body (skip header row)
-				const rowColors = rowIndex === 0 ? null : [];
-
-				Array.from(row.cells).forEach(cell => {
-					
-					if (headers.cells[currentCol].textContent == ""){
-						return
-					}
-					currentCol += 1;
-					
-					const input = cell.querySelector("input, textarea");
-					const select = cell.querySelector("select");
-
-					if (input) {
-						if (input.type === "checkbox") {
-							const checkboxSymbol = input.checked ? "X" : ""; 
-							rowData.push(checkboxSymbol);
-							if (rowIndex > 0) rowColors.push([0, 135, 183]);
-						} else {
-							rowData.push(input.value);
-							if (rowIndex > 0) rowColors.push([0, 135, 183]);
-						}
-					}
- 					else if (select) {
-						rowData.push(select.options[select.selectedIndex].text);
-						if (rowIndex > 0) rowColors.push([0, 135, 183]); // Blue for inputs/selects
-					} 
-					else {
-						let cellText = Array.from(cell.childNodes).filter(node => node.nodeType === Node.TEXT_NODE) // Only get text nodes
-										.map(node => node.textContent.trim()) // Clean up spaces
-										.join(" "); // Join multiple text nodes (if any)
-						rowData.push(cellText);
-						if (rowIndex > 0) rowColors.push([78,99, 109]); // Black for regular text
-					}
-				});
-
-				processedTable.push(rowData);
-				if (rowIndex > 0) colorTable.push(rowColors); // Only push body rows to colorTable
-			});
-
+			
+			const [processedTable, colorTable] = extractTableFields(element)
 
             // Ensure page split before adding table if needed
             yPosition = checkNewPage(pdf,yPosition,pageHeight)
-
-			//console.log(processedTable[0])
-			//console.log(processedTable.slice(1))
-			
 
 			pdf.autoTable({
 				head: [processedTable[0]], // First row as header (unchanged)
@@ -150,6 +94,7 @@ async function exportPageToPDF() {
         } 
 
         else if (element.tagName === "SELECT") {
+
             highlightText(pdf)
 
 			// Get only the selected option from a <select>
@@ -208,6 +153,105 @@ async function exportPageToPDF() {
 	addNumbersAndDates(pdf)
 	addWatermark(pdf)
     pdf.save("exported_content.pdf");
+}
+
+
+function extractTableFields(tableElement,checkheaders=true,log=false){
+	// returns 2D array with text content; including headers
+	// returns 2D array with color of text; without headers
+
+	const processedTable = [];
+	const colorTable = []; // Sister array for colors (only for the body)
+
+	var headers = Array.from(tableElement.rows)[0]
+		
+	var currentCol = 0
+
+	Array.from(tableElement.rows).forEach((row, rowIndex) => {
+		const rowData = [];
+
+		currentCol = 0;
+					
+		// Only generate colors for the body (skip header row)
+		const rowColors = rowIndex === 0 ? null : [];
+
+		Array.from(row.cells).forEach(cell => {
+			
+			if (checkheaders && (headers.cells[currentCol].textContent == "")){
+				return
+			}
+			currentCol += 1;
+			
+			const subtable = cell.querySelector("table");
+			const input = cell.querySelector("input, textarea");
+			const select = cell.querySelector("select");
+			const text = cell.querySelector("text");
+
+			if (subtable){
+				var subtabledata = extractTableFields(subtable,false,false)
+				var multistring = tableToMultiline(subtabledata[0],{'sep':'  |  '})
+				rowData.push(multistring)
+
+			}	
+
+			else if (input) {
+				if (input.type === "checkbox") {
+					const checkboxSymbol = input.checked ? "X" : ""; 
+					rowData.push(checkboxSymbol);
+					if (rowIndex > 0) rowColors.push([0, 135, 183]);
+				} else {
+					rowData.push(input.value);
+					if (rowIndex > 0) rowColors.push([0, 135, 183]);
+				}
+			}
+			else if (select) {
+				
+				if (log){				
+					console.log("log select",select.options[select.selectedIndex].text)
+					console.log(select.options)
+					console.log(select.selectedIndex)
+				}
+				
+				rowData.push(select.options[select.selectedIndex].text);
+				if (rowIndex > 0) rowColors.push([0, 135, 183]); // Blue for inputs/selects
+			} 
+			else if (text){
+				rowData.push(text.innerHTML);
+				
+				
+			}
+			else {
+				let cellText = Array.from(cell.childNodes).filter(node => node.nodeType === Node.TEXT_NODE) // Only get text nodes
+								.map(node => node.textContent.trim()) // Clean up spaces
+								.join(" "); // Join multiple text nodes (if any)
+				rowData.push(cellText);
+				if (rowIndex > 0) rowColors.push([78,99, 109]); // Black for regular text
+			}
+		});
+
+		processedTable.push(rowData);
+		if (rowIndex > 0) colorTable.push(rowColors); // Only push body rows to colorTable
+	});
+	
+	
+	return [processedTable,colorTable]
+	
+	
+}
+
+
+function tableToMultiline(table, opts = {}) {
+  const { sep = ' ', skipEmpty = true } = opts;
+
+  const lines = (table || []).map((row = []) => {
+    const cells = row.map(cell =>
+      (cell == null ? '' : String(cell)).trim()
+    );
+    const line = cells.join(sep).trim();
+    return line;
+  });
+
+  return (skipEmpty ? lines.filter(l => l.length) : lines).join('\n');
 }
 
 
@@ -369,10 +413,13 @@ async function exportToWord() {
 
 
 	const parentDiv = document.querySelector(".content"); // Replace with your target div
-	var elements = parentDiv.querySelectorAll("h1, h2, h3, table,p, span:not(table span), select:not(table select), input:not(table input)");
+	//var elements = parentDiv.querySelectorAll("h1, h2, h3, table,p, span:not(table span), select:not(table select), input:not(table input)");
+	var elements = parentDiv.querySelectorAll("h1, h2, h3, table:not(table table),p, span:not(table span), select:not(table select), input:not(table input)"); 
 
 	var reorderedElements = moveElementById(Array.from(elements), "heatloss_table", 1); 
 	reorderedElements = moveElementById(Array.from(reorderedElements), "results_header", 1); 
+
+	var divsToSkip = evaluateDivsToSkip()
 
 	
     const docParagraphs = [];
@@ -381,6 +428,11 @@ async function exportToWord() {
         if (window.getComputedStyle(element).display === "none") {
             continue;
         }
+
+		if (divsToSkip.some(divid => document.getElementById(divid).contains(element))) {
+            continue;
+        }
+
 
         if (["H1", "H2", "H3"].includes(element.tagName)) {
             const levelMap = {
@@ -402,16 +454,14 @@ async function exportToWord() {
         }
 
         else if (element.tagName === "TABLE") {
-            const rows = [];
-            const tableRows = Array.from(element.rows);
-            //const headers = Array.from(tableRows[0].cells).map(cell => cell.textContent.trim());
-			const headers = Array.from(tableRows[0].cells).map(cell => {
-				return Array.from(cell.childNodes)
-					.filter(node => node.nodeType === Node.TEXT_NODE)
-					.map(node => node.textContent.trim())
-					.join(" ");
-			});  // avoid taking nested elements with it (aka: tooltips)
+			
+			const [processedTable, colorTable] = extractTableFields(element)
 
+			const headers = processedTable[0]
+		    const bodyRows = processedTable.slice(1);
+
+            const rows = [];
+            
             // Build header row
             const headerRow = new TableRow({
                 children: headers.map(headerText =>
@@ -434,47 +484,27 @@ async function exportToWord() {
                     })
                 ),
             });
-            rows.push(headerRow);
 
-            // Body rows
-            for (let i = 1; i < tableRows.length; i++) {
-                const cells = Array.from(tableRows[i].cells).map(cell => {
-                    let text = "";
-                    const input = cell.querySelector("input, textarea");
-                    const select = cell.querySelector("select");
-
-					if (input) {
-						if (input.type === "checkbox") {
-							text = input.checked ? "X" : ""; 
-						} else {
-							text = input.value;
-						}
-                    } else if (select) {
-                        text = select.options[select.selectedIndex].text;
-                    } else {
-                        text = Array.from(cell.childNodes)
-                            .filter(node => node.nodeType === Node.TEXT_NODE)
-                            .map(node => node.textContent.trim())
-                            .join(" ");
-                    }
-
-                    return new TableCell({
-                        children: [new Paragraph(text)],
-                        width: { size: 20, type: WidthType.PERCENTAGE },
-                    });
-                });
-
-                rows.push(new TableRow({ children: cells }));
-            }
+			const otherRows = bodyRows.map(row =>
+				new TableRow({
+				  children: row.map(cellText =>
+					new TableCell({
+					  children: [new Paragraph(String(cellText ?? ""))],
+					  width: { size: 20, type: WidthType.PERCENTAGE }
+					})
+				  )
+				})
+			  );
 
             docParagraphs.push(new Table({
-                rows,
+                rows: [headerRow, ...otherRows],
                 width: {
                     size: 100,
                     type: WidthType.PERCENTAGE,
                 },
                 alignment: AlignmentType.CENTER,
             }));
+			
         }
 
         else if (element.tagName === "SELECT") {
@@ -548,7 +578,6 @@ function evaluateDivsToSkip(){
 		toSkip.push("radiators")
 	}
 
-	console.log("to skip",toSkip)
 	return toSkip
 	
 }

@@ -1552,7 +1552,7 @@ function renderSpaceLoops(floorModel,spaceid,parentElement){
 		else{
 			var selectedloopid = space.loops[0].loopid
 			var loopname = floorModel.getLoopById(selectedloopid).name
-			var selopt = createElement("option",{"value":selectedloopid,"label":loopname},"",[])
+			var selopt = createElement("option",{"value":selectedloopid,"label":loopname},loopname,[])
 			sel.appendChild(selopt)
 			weight.innerHTML = floorModel.spaces[spaceid].loops[0].weight
 
