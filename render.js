@@ -554,6 +554,8 @@ function renderBoundariesTable() {
 // RESULTS
 
 function renderResults(){
+	
+	
     // Define the headers of the table
     const headers_keys = ["spaces", "transmission_heat_loss", "ventilation_heat_loss", "heatup_loss","total_heat_loss","per_m2"];
     
@@ -616,6 +618,11 @@ function renderResults(){
 
             table.appendChild(row);		}
     });
+	
+	
+	
+	
+	
 
 	// Create a total row and append it
     const totalRow = document.createElement("tr");
@@ -637,7 +644,51 @@ function renderResults(){
     resultsDiv.innerHTML = "";
 	resultsDiv.appendChild(header)
     resultsDiv.appendChild(table);
+	
+	
+	//var extraloss = document.createElement("p")
+	//extraloss.innerHTML = floorModel.getTotalLoss()
+	//include floorheating total loss
+	if (floorModel.loops.length > 0){
+		/*const row = document.createElement("tr");
+		const spaceCell = document.createElement("td");
+		spaceCell.textContent = "FLOOR";
+		row.appendChild(spaceCell);
+
+		const values = [
+			null,
+			null,
+			null, 
+			floorModel.getTotalLoss(),
+			null
+			
+		];
+		// Append cells and update totals
+		values.forEach((value, index) => {
+			const cell = document.createElement("td");
+			if (value != null) {cell.textContent = value.toFixed(0);}
+			row.appendChild(cell);
+			if (totals[index]!=null){totals[index] += value;}
+		});
+
+		table.appendChild(row);		*/
+		var restable = createElement('table',{style:"width:35%"},'',children=
+										[createElement('tr',{},'',children=[
+											createElement('th',{'lang-key':"floorheating_total_loss"},translate('floorheating_total_loss'),children=[]),
+											createElement('th',{},floorModel.getTotalLoss().toFixed(0),children=[])]),
+										createElement('tr',{},'',children=[
+											createElement('th',{'lang-key':"grand_total"},translate('grand_total'),children=[]),
+											createElement('th',{},(floorModel.getTotalLoss()+Math.max(...totals)).toFixed(0),children=[])])	
+											])
+	
+	resultsDiv.appendChild(createElement('p',{},'',[]))
+	resultsDiv.appendChild(restable)
+	}	
 }
+	
+	
+	
+	
 
 
 // WALL ELEMENTS
@@ -1414,6 +1465,7 @@ function renderFloorHeating(){
 						//createElement('select',{'id':'ref_loop_select'},'',[]),
 						createElement('table',{'id':'ref_loop_table'},'',[]),
 						createElement('h3',{'lang-key':'loop_details'},'loop_details',[]),
+						createElement('div',{'id':'floorheating_start_temp'},'',[]),
 						createElement('table',{'id':'table_loops'},'',[]),
 						])
 
@@ -1422,6 +1474,9 @@ function renderFloorHeating(){
 	renderFloorHeatingSpaces()
 	renderFloorHeatingSelects()
 	renderRefLoop()
+	
+	renderSupplyWaterTemperature()
+	
 	renderLoopTable()
 	renderFloorSystems()
 	
@@ -1685,8 +1740,8 @@ function renderRefLoop(){
 						"tubeSpacing":loop.tubeSpacing,
 						"deltaH":loop.stats.deltaH,
 						"sigma":floorModel.designDeltaT,
-						"Tstart":floorModel.supplyWaterTemperature.toFixed(1),
-						"Treturn":loop.stats.returnTemperature.toFixed(1)
+						"Tstart":floorModel.refSupplyWaterTemperature.toFixed(1),
+						"Treturn":(floorModel.refSupplyWaterTemperature.toFixed(1)-floorModel.designDeltaT).toFixed(1)
 			})
 		}	
 		
@@ -1697,6 +1752,24 @@ function renderRefLoop(){
 	
 	
 }
+
+function renderSupplyWaterTemperature(){
+	
+	var targetdiv = document.getElementById("floorheating_start_temp")
+	
+	var supplyTempElement = createElement("p",{},"",[
+								createElement("span",{},translate("floor_heating_supply_temperature"),[]),
+								createElement("span",{},"    ",[]),
+								createElement("input",{'type':'number','min':'25','max':'45','value':floorModel.getSupplyWaterTemperature().toFixed(0),'onchange':handleFloorHeatingSupplyWaterTemperaturechange},"",[])
+								
+	])
+	targetdiv.appendChild(supplyTempElement)
+	
+	//floorModel.supplyWaterTemperature 
+		
+	
+}
+
 
 function renderLoopTable(){
 	
@@ -1770,7 +1843,8 @@ function renderLoopTable(){
 		},  
 		{ header: "q_under", type: "text", value: "qu" }, 
 		{ header: "mh_kg_s", type: "text", value: "mh_kg_s" },
-		{ header: "mh_l_h", type: "text", value: "mh_l_h" }
+		{ header: "mh_l_h", type: "text", value: "mh_l_h" },
+		{ header : "qu_abs", type:"text", value : "qu_abs"}
 		]
 
 		
@@ -1794,13 +1868,14 @@ function renderLoopTable(){
 					"tubeSpacing":loop.tubeSpacing,
 					"deltaH":loop.stats.deltaH.toFixed(1),
 					"sigma":loop.stats.sigma.toFixed(1),
-					"Tstart":floorModel.supplyWaterTemperature.toFixed(1),
+					"Tstart":floorModel.getSupplyWaterTemperature().toFixed(1),
 					"Treturn":loop.stats.returnTemperature.toFixed(1),
 					"L0":loop.L0.toFixed(0),
 					"Lr":loop.length.toFixed(0),
 					"space_below":loop.ui?.belowspaceid ?? 0,
 					"Tu":loop.Tu.toFixed(0) || null,
 					"qu":loop.stats.qu.toFixed(0),
+					"qu_abs":loop.stats.qu_abs.toFixed(0),
 					"mh_kg_s":loop.stats.mflow.toFixed(3),
 					"mh_l_h":(loop.stats.mflow*3600).toFixed(0),
 					"R0":loop.R0.toFixed(2),

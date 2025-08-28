@@ -341,6 +341,15 @@ function handleFloorSystemChange(e){
 	
 }
 
+function handleFloorHeatingSupplyWaterTemperaturechange(e){
+	
+	floorModel.setSupplyWaterTemperature(e.target.value)
+	renderFloorHeating()
+
+	
+}
+
+
 function handleLoopRChange(e,row){
 	floorModel.setLoopFloorResistance(row.loopid,parseFloat(e.target.value))
 	renderFloorHeating()
@@ -534,17 +543,16 @@ function handleLoopNameChange(e,row){
 
 
 
+
+
 // TO DOS
 /*
 
 short term
 
 - sort the floor heating loop in the same order they appear in the space table
-- complete dutch translations
 - edit start temperature of floor heating system
 
-mid term
-- fix exports word and PDF for floor heating and RADIATORS
 
 longer term
 - allow floor and radiator sizing using manual inputs for heat load

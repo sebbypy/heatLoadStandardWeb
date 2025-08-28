@@ -215,7 +215,10 @@ var translations = {
 		"air_with_destratification":"Chauffage par air avec déstratification",
 		"radiant_ceiling":"Panneaux radiants au plafond",
 		"radiant_tubes":"Tubes radiants",
-		"infrared_radiant":"Chauffage radiant à infra-rouges"
+		"infrared_radiant":"Chauffage radiant à infra-rouges",
+		"floorheating_total_loss":"Pertes du chauffage sol (W)",
+		"grand_total":"Total général (W)",
+		"floor_heating_supply_temperature":"Température de départ choisie (°C)",
 		
 		
 		
@@ -394,7 +397,12 @@ var translations = {
 	"air_with_destratification":"Warmeluchtverwarming met bijkomende destratificatie",
 	"radiant_ceiling":"Tegen het plafond gemonteerde stralingspanelen",
 	"radiant_tubes":"Verwarming met stralingsbuizen",
-	"infrared_radiant":"Verwarming met infraroodstralers"
+	"infrared_radiant":"Verwarming met infraroodstralers",
+	"floorheating_total_loss":"Vloerverwarming verliezen (W)",
+	"grand_total":"Algemeen totaal (W)",
+	"floor_heating_supply_temperature":"Gekozen vertrektemperatuur (°C)",
+
+
 
 
     },

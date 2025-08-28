@@ -20,6 +20,8 @@ function loadPage(){
 	
 	addTracking()
 	renderAll()
+	
+	floorModel.subscribe("floorheating_losses_updated",renderResults)
 
 	switchLanguage(getCurrentLanguage())
 	

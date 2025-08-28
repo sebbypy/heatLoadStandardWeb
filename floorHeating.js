@@ -6,8 +6,11 @@ class FloorHeatingModel {
 		
 		this.system = null
 		this.designDeltaT = 5
-		this.supplyWaterTemperature = null
+		this.supplyWaterTemperature = null     // actual choice of the designer
+		this.refSupplyWaterTemperature = null  // start temperature calculated from ref loop
 		
+		
+		this.subscribers={}
 		
 		this.defaultSystems = {
 			"Vitoset 16x2 45 mm": {
@@ -36,6 +39,22 @@ class FloorHeatingModel {
 			}
 		};	
     }
+	
+	//subscribe function so that other classes can be notified when there is a change
+	subscribe(event, callback) {
+		if (!this.subscribers[event]) {
+			this.subscribers[event] = [];
+		}
+		this.subscribers[event].push(callback);
+	}
+
+	notifySubscribers(event, value) {
+		//console.log("notify value",value)
+		if (this.subscribers[event]) {
+			this.subscribers[event].forEach(callback => callback(value));
+		}
+	}
+
 
 	getLoopById(loopid) {
 	    let loop = this.loops.find(l => l.id === loopid);
@@ -67,7 +86,24 @@ class FloorHeatingModel {
 
 	}
 
-	computeSupplyWaterTemperature(){
+	setSupplyWaterTemperature(value){
+		this.supplyWaterTemperature = Number(value)
+		this.computeAll()
+		
+		
+	}
+
+	getSupplyWaterTemperature(){
+		console.log(this.supplyWaterTemperature)
+		if (this.supplyWaterTemperature != null){
+			return Number(this.supplyWaterTemperature)
+			}
+		else{
+			return 0
+			}
+	}
+
+	computeRefSupplyWaterTemperature(){
 
 		var refLoop = this.getRefLoop()
 	
@@ -94,7 +130,7 @@ class FloorHeatingModel {
 		}
 
 		//this.supplyWaterTemperature = Math.ceil(numerator / denominator)
-		this.supplyWaterTemperature = numerator / denominator
+		this.refSupplyWaterTemperature = numerator / denominator
 
 		//console.log("supplyt T",theta_i,sigma,delta_theta_H_des)
 
@@ -582,6 +618,10 @@ class FloorHeatingModel {
 	
 	computeAllLoopsTemperatures(){
 		
+		if (this.supplyWaterTemperature == null){
+			this.supplyWaterTemperature = this.refSupplyWaterTemperature
+		}
+		
 		this.loops.forEach( loop =>{
 
 			var Tj = loop.stats.meanAirTemperature
@@ -644,7 +684,20 @@ class FloorHeatingModel {
 		loop.stats.qu = 1/loop.Ru*(loop.R0*loop.stats.heatLoadPerSqMeter + loop.stats.meanAirTemperature - loop.Tu) // W/m2
 		loop.stats.qtot = loop.stats.heatLoadPerSqMeter + loop.stats.qu // W/m2
 		loop.stats.mflow = loop.stats.totalHeatedArea/(loop.stats.sigma*4190)*loop.stats.qtot
+		
+		loop.stats.qu_abs = loop.stats.qu * loop.stats.totalHeatedArea // WATTS
+		
+		
 	}
+	
+	getTotalLoss(){
+		
+		var total = 0
+		this.loops.forEach(loop => {total += loop.stats.qu_abs})
+		return total
+		
+	}
+	
 	
 	isDataComplete() {
         return (
@@ -674,13 +727,16 @@ class FloorHeatingModel {
 		try{
 		
 			this.computeAllLoopStats()
-			this.computeSupplyWaterTemperature()
+			this.computeRefSupplyWaterTemperature()
 			this.computeAllLoopsTemperatures()
 			
 			this.loops.forEach(loop => {
 				this.computeLoopsLength(loop.id)
 				this.computeExtraLoss(loop.id)
 			})
+			
+			this.notifySubscribers("floorheating_losses_updated")
+			
 		}
 		catch (error) {
 			console.error(error)
@@ -785,6 +841,10 @@ class FloorHeatingModel {
 			//this.numberOfLoops = n
 		})
 	}
+	
+	
+	
+	
 	
 }
 	

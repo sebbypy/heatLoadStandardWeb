@@ -123,7 +123,9 @@ function readFloorHeatingModel(floorJson) {
         floorModel.syncWithMainModel(model.spaces);
         floorModel.computeAll();
 	}
-    
+ 
+	floorModel.subscribe("floorheating_losses_updated",renderResults)
+ 
 }
 	
 
