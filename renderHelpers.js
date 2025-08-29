@@ -2,6 +2,12 @@
 
 
 function createElement(tag, attributes = {}, innerText = '', children = [], tooltipKey = '') {
+	
+	if (tooltipKey != ""){
+		
+		console.log("TOOLTIPKEY",tooltipKey)
+	}
+	
     const element = document.createElement(tag);
 
     // Loop through attributes

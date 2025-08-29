@@ -551,7 +551,6 @@ function handleLoopNameChange(e,row){
 short term
 
 - sort the floor heating loop in the same order they appear in the space table
-- edit start temperature of floor heating system
 
 
 longer term

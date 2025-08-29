@@ -61,7 +61,7 @@ var translations = {
 		"space":"Espace",
 		"environment":"Environnement",
 		"at_ref_surface":"Surface de référence pour l'essai d'infiltrations  ",
-		"thermal_bridge_tooltip":"0.02 si très soigné<br> 0.05 pour bâtiment neuf 'standard' <br> 0.15 si isolé par l'intérieur <br> 0.10 dans les autres cas",
+		"thermal_bridge_tooltip":"0.02 si très soigné <br> 0.05 pour bâtiment neuf 'standard' <br> 0.15 si isolé par l'intérieur <br> 0.10 dans les autres cas",
 		"natural_supply_tooltip":"Débit via grilles (système C)",
 		"transfer_flow_tooltip":"Débit entrant provenant d'une autre pièce",
 		"ventilation_nr_horeca": "Horeca",
@@ -219,6 +219,7 @@ var translations = {
 		"floorheating_total_loss":"Pertes du chauffage sol (W)",
 		"grand_total":"Total général (W)",
 		"floor_heating_supply_temperature":"Température de départ choisie (°C)",
+		"qu_abs":"ϕu (W)"
 		
 		
 		
@@ -401,6 +402,7 @@ var translations = {
 	"floorheating_total_loss":"Vloerverwarming verliezen (W)",
 	"grand_total":"Algemeen totaal (W)",
 	"floor_heating_supply_temperature":"Gekozen vertrektemperatuur (°C)",
+	"qu_abs":"ϕu (W)"
 
 
 

@@ -87,7 +87,7 @@ function initializePage(container_id) {
         createElement('h2', { 'lang-key': 'ventilation' }, 'Ventilation'),
         createElement('h3', { 'lang-key': 'air_tightness' }, 'Etanchéité à l’air'),
 		createElement('select', { id: 'airTightnessSelect', onchange: handleAirTightnessChange }, '', [
-			createElement('option', { value: 'n50',selected: true }, 'n50'),
+			createElement('option', { value: 'n50'}, 'n50'),
 			createElement('option', { value: 'v50' }, 'v50'),
 		//createElement('option', { value: 'Q50' }, 'Q50')
 		]),
@@ -249,10 +249,11 @@ function renderMainTabs() {
     tabContainer.innerHTML = ''; // Clear existing tabs
 
 
+    //var fixedTabs = ['hometab','spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
     var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
-	//var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results']
 
-	var icons = [`<span class="material-symbols">space_dashboard</span>`,
+	var icons = [//`<span class="material-symbols">home</span>`,
+	`<span class="material-symbols">space_dashboard</span>`,
 			`<span class="material-symbols">thermostat</span>`,
 			`<span class="material-symbols">air</span>`,
 			getIcon('insulation'),
@@ -261,6 +262,8 @@ function renderMainTabs() {
 			`<span class="material-symbols">calculate</span>`,
 			getIcon('radiator'),
 			`<span class="material-symbols">nest_true_radiant</span>`,
+			`<span class="material-symbols">check_box</span>`,
+			
 			]
 			
 	
@@ -300,6 +303,9 @@ function renderMainTabs() {
 	st.parentNode.insertBefore(newHeader, st);
 
 
+	//spacer = createElement("div",{'class':'spacer'},"",[]);
+	//const example = document.getElementById("tab-woarkinexample")
+	//example.parentNode.insertBefore(spacer,example);
 
 
 }
@@ -397,6 +403,18 @@ function setSpaceTabsColorBehavior(){
 		});
 	});
 }
+
+// HOME tab
+
+/*function renderHome(){
+
+	createElement("div",{'lang-key':'intro_text'},'',[]}
+	
+}*/
+
+
+
+
 
 
 // SPACES
@@ -1056,7 +1074,7 @@ function renderVentilationTable() {
 				var input = document.createElement('input');
 				input.id = 'space'+space.id+'-'+param
 				input.type = 'number';
-				input.value = space.ventilation[param].toFixed(0) || '';
+				input.value = space.ventilation[param]?.toFixed(0) ?? '';
 				input.onchange = () => handleVentilationChange(space.id, param, input.value);
 				cell.appendChild(input);
 				row.appendChild(cell);
@@ -1072,6 +1090,13 @@ function renderVentilationTable() {
 			if (model.airTransfers.transferFlowCalculation == "detailled"){
 				var cell = document.createElement('td')
 				cell.innerHTML = space.ventilation.balance.toFixed(0)
+				
+				if (space.ventilation.balance.toFixed(0) != 0){
+					cell.style.fontWeight = "bold"
+					cell.style.color = "red"
+				}
+
+				
 				cell.name = "balance"+space.id
 				row.appendChild(cell);
 			}
@@ -1253,26 +1278,31 @@ function renderHeatRecovery(){
 function renderAirTightness(){
 	
 	unitDisplay = document.getElementById("at_unit")
-	refSurface = document.getElementById("at_ref_surface_div")
+	refSurfacediv = document.getElementById("at_ref_surface_div")
+	refSurfaceInput = document.getElementById("at_ref_surface")
+
+
+	refSurfaceInput.value = model.otherData.airtightness.v50_refsurface
+	document.getElementById('airTightnessSelect').value = model.otherData.airtightness.choice
 
     // Check the selected value and update the unit display accordingly
     switch(model.otherData.airtightness.choice) {
         case 'v50':
             unitDisplay.textContent = "(m³/h)/m²";  // Set the unit for v50
-			refSurface.style.display = 'block'
+			refSurfacediv.style.display = 'block'
             break;
         case 'n50':
             unitDisplay.textContent = "vol/h";  // Set the unit for n50
-			refSurface.style.display = 'none'
+			refSurfacediv.style.display = 'none'
             break;
         case 'Q50':
             unitDisplay.textContent = "m³/h";  // Set the unit for Q50
-			refSurface.style.display = 'none'
+			refSurfacediv.style.display = 'none'
 
             break;
         default:
             unitDisplay.textContent = "";  // No unit by default or if something goes wrong
-			refSurface.style.display = 'none'
+			refSurfacediv.style.display = 'none'
 
     }
 	
@@ -1326,7 +1356,7 @@ function renderReheat(){
 						reheatTime: space.heat_up_time,
 						floorArea:space.floorarea,
 						reheatPerSquareMeter: model.getReheatPower(space.id),
-						reheatPower: space.reheat_power
+						reheatPower: space.reheat_power.toFixed(0)	
 				}
 				data.push(row)
 		}

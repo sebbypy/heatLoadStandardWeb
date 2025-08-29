@@ -40,6 +40,9 @@ function updateElementLanguage(element, lang) {
     // Update the main element’s innerHTML with the translated text (including HTML formatting)
     element.innerHTML = translation;
 
-    // Reattach saved child elements (like tooltips)
-    children.forEach(child => element.appendChild(child));
+
+	if (element.getAttribute('class') != 'tooltiptext'){
+		// Reattach saved child elements (like tooltips)
+		children.forEach(child => element.appendChild(child));
+	}
 }

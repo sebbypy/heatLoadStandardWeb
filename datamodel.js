@@ -97,6 +97,12 @@ class DataModel {
 
 	}
 
+	computeAverageHeights(){
+		this.spaces.forEach((space, index) => { 
+			space['averageHeight'] = space['volume']/space['floorarea']
+		})
+	}
+
 	changeSpaceProperty(spaceId, property, value){
 	    const space = this.spaces.find(space => space.id === spaceId);
 		if (space) {

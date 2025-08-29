@@ -13,6 +13,9 @@ function readHeatLoadModel(heatloadJson){
     
 	if (heatloadJson.spaces && heatloadJson.wallElements && heatloadJson.wallInstances) {
 		model.spaces = heatloadJson.spaces;
+		
+		model.computeAverageHeights()
+		
 		model.wallElements = heatloadJson.wallElements;
 		model.wallInstances = heatloadJson.wallInstances;
 
@@ -35,10 +38,13 @@ function readRadiatorsModel(radiatorsJson){
 	
 	radModel = new RadiatorsModel();
 	
-	radModel.spaces = radiatorsJson.spaces
-	radModel.startTemperature = radiatorsJson.startTemperature
-	radModel.returnTemperature = radiatorsJson.returnTemperature
-	radModel.refT = radiatorsJson.refT
+	if (radiatorsJson){
+	
+		radModel.spaces = radiatorsJson.spaces
+		radModel.startTemperature = radiatorsJson.startTemperature
+		radModel.returnTemperature = radiatorsJson.returnTemperature
+		radModel.refT = radiatorsJson.refT
+	}
 
 	//radModel.syncWithMainModel(model.hl_spaces)
 	radModel.linkToModel(model);
