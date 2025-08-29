@@ -94,7 +94,6 @@ class FloorHeatingModel {
 	}
 
 	getSupplyWaterTemperature(){
-		console.log(this.supplyWaterTemperature)
 		if (this.supplyWaterTemperature != null){
 			return Number(this.supplyWaterTemperature)
 			}
@@ -760,13 +759,13 @@ class FloorHeatingModel {
 	}
 	
 	syncWithMainModel(hl_spaces){
-		console.log("syncing floorheating")
+		//console.log("syncing floorheating")
 
 		var hasFloorHeating = false
 		
 		hl_spaces.forEach( space => {
 
-			console.log("Loop ",space.name)
+			//console.log("Loop ",space.name)
 
 			if (space.heating_type == "floorheating"){
 
@@ -784,13 +783,13 @@ class FloorHeatingModel {
 				    //this.setSpaceName(space.id,space.name)
 					//this.setSpaceHeatLoad(space.id,space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power,space.temperature)			
 					//this.setSpaceTemperature(space.id,space.temperature)
-					console.log("EDIT in floor model",this.spaces[space.id])
+					//console.log("EDIT in floor model",this.spaces[space.id])
 					
 					this.editSpace(space.id,space.floorarea,space.temperature,space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power)
 					
 				}
 				else{
-					console.log("ADD Space in floor model",space.name)
+					//console.log("ADD Space in floor model",space.name)
 					//this.addSpace(space.id,space.name,space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power,space.temperature)  // rad
 					this.addSpace(space.name,space.id, space.floorarea, space.temperature, space.transmission_heat_loss + space.ventilation.ventilation_loss+space.reheat_power)
 					this.createLoopForNewSpace(space.id)
@@ -803,7 +802,7 @@ class FloorHeatingModel {
 			else{
 				//check it's an actual space and not a bc
 				if (this.idExistsInThisModel(space.id)){
-					console.log("DELETE space from floor model",space.name)
+					//console.log("DELETE space from floor model",space.name)
 					this.deleteSpace(space.id)
 				}
 			}
@@ -812,7 +811,7 @@ class FloorHeatingModel {
 		//loop current space to delete them if not in main model
 		Object.keys(spaces).forEach(id => {
 			if (!this.idExistsInMainModel(id,hl_spaces)){
-				console.log("DELETE space",id,"that does not exist anymore in mail model")
+				//console.log("DELETE space",id,"that does not exist anymore in mail model")
 				this.deleteSpace(id)
 			}
 		})

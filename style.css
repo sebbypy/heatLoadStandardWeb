@@ -1,3 +1,10 @@
+#home{
+	font-size:20px;
+	line-height:150%;
+	
+}
+
+
 
 table {
 	width: 100%;
@@ -47,9 +54,7 @@ input[type=number]{
 input[type=checkbox]{
 	width:20px;
 	height:20px;
-
 }
-
 
 .tab {
 	margin: 3px 3px;

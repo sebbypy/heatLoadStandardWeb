@@ -41,8 +41,16 @@ function updateElementLanguage(element, lang) {
     element.innerHTML = translation;
 
 
-	if (element.getAttribute('class') != 'tooltiptext'){
-		// Reattach saved child elements (like tooltips)
-		children.forEach(child => element.appendChild(child));
-	}
+	//only restore tooltip text
+	children.forEach(child =>{
+		if (child.getAttribute('class')=='tooltiptext'){
+			element.appendChild(child)
+		}
+	})
+
+
+	/*if (element.getAttribute('class') != 'tooltiptext'){
+    // Reattach saved child elements (like tooltips)
+    children.forEach(child => element.appendChild(child));
+	*/
 }

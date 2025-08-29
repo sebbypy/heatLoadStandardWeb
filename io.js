@@ -154,18 +154,18 @@ function exportData(filename) {
 }
 
 function loadModelFromJson(jsonData) {
-    //try {
-        const parsed = JSON.parse(jsonData);
-		
+    
+	const parsed = JSON.parse(jsonData);
+	loadModelFromObject(parsed)
+	
+}
+
+function loadModelFromObject(parsed){
+	
 		readHeatLoadModel(parsed.heatload)
 		readRadiatorsModel(parsed.radiators)
 		readFloorHeatingModel(parsed.floor)
 		renderAll()
-	
-    //} catch (error) {
-    //    console.log("Error loading or parsing data: " + error);
-    //    alert("Error loading or parsing data: " + error.message+" "+error.fileName+" "+error.lineNumber);
-    //}
 }
 
 
@@ -219,6 +219,11 @@ function loadModelFromLocalStorage() {
 
 }
 
+function loadExample(exampleName){
+	loadModelFromObject(hl_examples[exampleName])
+	
+	
+}
 
 
 // UI Save file dialog

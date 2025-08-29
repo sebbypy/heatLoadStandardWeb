@@ -541,7 +541,15 @@ function handleLoopNameChange(e,row){
 	
 }
 
-
+function handleLoadExample(name){
+	
+	
+	resetPage()
+	loadExample(name)
+	
+	//renderAll()
+	
+}
 
 
 

@@ -24,6 +24,7 @@ function loadPage(){
 	floorModel.subscribe("floorheating_losses_updated",renderResults)
 
 	switchLanguage(getCurrentLanguage())
+	toggleVisibility('home')
 	
 
 }

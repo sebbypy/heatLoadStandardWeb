@@ -3,11 +3,6 @@
 
 function createElement(tag, attributes = {}, innerText = '', children = [], tooltipKey = '') {
 	
-	if (tooltipKey != ""){
-		
-		console.log("TOOLTIPKEY",tooltipKey)
-	}
-	
     const element = document.createElement(tag);
 
     // Loop through attributes
@@ -78,6 +73,7 @@ function renderTable(table, columns, data, headerrow = true) {
 		columns.forEach(col => {
 			const th = document.createElement("th");
 			th.textContent = translate(col.header);
+			th.setAttribute('lang-key',col.header);
 			headerRow.appendChild(th);
 		});
 		thead.appendChild(headerRow);
@@ -167,7 +163,6 @@ function renderTable(table, columns, data, headerrow = true) {
 				td.appendChild(div)
 			}
 			else if (col.type == "checkbox"){
-				console.log("CHECKBOX ",col)
 				const cb = document.createElement("input")
 				cb.type = "checkbox"
 				cb.checked = rowData[col.value]

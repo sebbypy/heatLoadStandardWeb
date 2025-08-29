@@ -34,6 +34,13 @@ function initializePage(container_id) {
 	const contentContainer = createElement('div', {class: 'content'},'',
 		[createElement('h1', { 'lang-key': 'heat_loss_calculation' }, 'Calcul des déperditions thermiques')])
 	
+	
+	
+	const home = createElement('div', { id: 'home', class: 'main-section' }, '', [])
+    
+	
+	
+	
    // Spaces Section
     const spaces = createElement('div', { id: 'spaces', class: 'main-section' }, '', [
         createElement('h2', { 'lang-key': 'spaces' }, 'Espaces'),
@@ -175,6 +182,7 @@ function initializePage(container_id) {
 	
 	
 	contentContainer.append(        
+		home,
 		spaces,
         boundaryConditions,
         ventilation,
@@ -223,6 +231,8 @@ function renderAll(){
 	// render all visible screens
 	
 	renderTabs()
+	renderHome()
+	
 	renderSpacesTable()
 	renderBoundariesTable()
 	
@@ -249,22 +259,21 @@ function renderMainTabs() {
     tabContainer.innerHTML = ''; // Clear existing tabs
 
 
-    //var fixedTabs = ['hometab','spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
-    var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
+    var fixedTabs = ['home','spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
+    //var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
 
-	var icons = [//`<span class="material-symbols">home</span>`,
-	`<span class="material-symbols">space_dashboard</span>`,
-			`<span class="material-symbols">thermostat</span>`,
-			`<span class="material-symbols">air</span>`,
-			getIcon('insulation'),
-			getIcon('areas'),
-			getIcon('reheat'),
-			`<span class="material-symbols">calculate</span>`,
-			getIcon('radiator'),
-			`<span class="material-symbols">nest_true_radiant</span>`,
-			`<span class="material-symbols">check_box</span>`,
-			
-			]
+	var icons = [`<span class="material-symbols">home</span>`,
+				`<span class="material-symbols">space_dashboard</span>`,
+				`<span class="material-symbols">thermostat</span>`,
+				`<span class="material-symbols">air</span>`,
+				getIcon('insulation'),
+				getIcon('areas'),
+				getIcon('reheat'),
+				`<span class="material-symbols">calculate</span>`,
+				getIcon('radiator'),
+				`<span class="material-symbols">nest_true_radiant</span>`,
+				`<span class="material-symbols">check_box</span>`,
+				]
 			
 	
     for (var i = 0; i < fixedTabs.length; i++) {
@@ -406,11 +415,34 @@ function setSpaceTabsColorBehavior(){
 
 // HOME tab
 
-/*function renderHome(){
+function renderHome(){
 
-	createElement("div",{'lang-key':'intro_text'},'',[]}
+	const newdiv = createElement("div",{},'',[
+				createElement("h2",{'lang-key':'intro_title'},"intro_title",[]),
+				createElement("p",{'lang-key':'intro_text'},"intro_text",[]),
+				createElement("h2",{'lang-key':'save_load_export_title'},"save_load_export_title",[]),
+				createElement("p",{'lang-key':'save_load_export_text'},"save_load_export_text",[]),
+				createElement("h2",{'lang-key':'example_title'},"example_title",[]),
+				createElement("p",{'lang-key':'example_text'},"example_text",[]),
+				createElement("button",{'id':'load_example_button','lang-key':'load_example'},"push_me",[]),
+				createElement("div",{'id':'example1_img'},"",[]),
+				createElement("h2",{'lang-key':'disclaimer_title'},"disclaimer_title",[]),
+				createElement("p",{'lang-key':'disclaimer_text'},"disclaimer_text",[])
+			
+				
+				
 	
-}*/
+	])
+
+	document.getElementById("home").innerHTML = ""
+	document.getElementById("home").appendChild(newdiv)
+	
+	document.getElementById("load_example_button").onclick = () => handleLoadExample('example1');
+
+	document.getElementById('example1_img').innerHTML = getImage('example1')
+	
+	
+}
 
 
 
@@ -1565,7 +1597,6 @@ function renderFloorHeatingSpaces(){
 
 	// creating table of spaces
 	for ([id,space] of Object.entries(floorModel.spaces)){
-		console.log("SPACE ID",id)
 		var can_be_grouped = true
 
 		if (Object.keys(spaces).length == 1){console.log("cannot be grouped, single space");can_be_grouped = false}
@@ -1949,7 +1980,6 @@ function renderFloorSystems(){
 	document.getElementById("floorheating").append(floorsystemdiv)
 	
 	var sel = document.getElementById('floorsystemeditor-select')
-	console.log(sel)
 	for (const [name,values] of Object.entries(floorModel.defaultSystems)){
 		
 		sel.append(createElement('option',{'value':name,'label':name},translate(name),[]))

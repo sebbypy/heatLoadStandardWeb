@@ -206,11 +206,11 @@ function extractTableFields(tableElement,checkheaders=true,log=false){
 			}
 			else if (select) {
 				
-				if (log){				
+				/*if (log){				
 					console.log("log select",select.options[select.selectedIndex].text)
 					console.log(select.options)
 					console.log(select.selectedIndex)
-				}
+				}*/
 				
 				rowData.push(select.options[select.selectedIndex].text);
 				if (rowIndex > 0) rowColors.push([0, 135, 183]); // Blue for inputs/selects
