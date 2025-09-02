@@ -438,6 +438,8 @@ function renderHome(){
 	document.getElementById("home").appendChild(newdiv)
 	
 	document.getElementById("load_example_button").onclick = () => handleLoadExample('example1');
+	document.getElementById("load_example_button").addEventListener("click", () => {trackEvent("loadExample", "main", {});});
+
 
 	document.getElementById('example1_img').innerHTML = getImage('example1')
 	

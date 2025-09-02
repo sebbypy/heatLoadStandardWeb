@@ -364,9 +364,15 @@ function deepMergeDefaults(defaultObj, savedData) {
 
 function addTracking(){
 
-	document.getElementById("exportPdfBtn").addEventListener("click", () => {trackEvent("exportPDF", "main", model);});
-	document.getElementById("exportDocxBtn").addEventListener("click", () => {trackEvent("exportDocx", "main", model);});
-	document.getElementById("exportDocxBtn").addEventListener("click", () => {trackEvent("exportDocx", "main", model);});
+	//document.getElementById("exportPdfBtn").addEventListener("click", () => {trackEvent("exportPDF", "main", model);});
+	//document.getElementById("exportDocxBtn").addEventListener("click", () => {trackEvent("exportDocx", "main", model);});
+	//document.getElementById("exportDocxBtn").addEventListener("click", () => {trackEvent("exportDocx", "main", model);});
+	//document.getElementById("exportPdfBtn").addEventListener("click", () => {trackEvent("exportPDF", "main", {"test":"test"});});
+	document.getElementById("exportPdfBtn").addEventListener("click", () => {trackEvent("exportPDF", "main", model.spaces);});
+	document.getElementById("exportDocxBtn").addEventListener("click", () => {trackEvent("exportDocx", "main", model.spaces);});
+	document.getElementById("importDataBtn").addEventListener("click", () => {trackEvent("importJson", "main", {});});
+	document.getElementById("exportDataBtn").addEventListener("click", () => {trackEvent("exportJson", "main", model.spaces);});
+	document.getElementById("load_example_button").addEventListener("click", () => {trackEvent("loadExample", "main", {});});
 	
 }
 
