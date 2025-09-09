@@ -372,7 +372,9 @@ function addTracking(){
 	document.getElementById("exportDocxBtn").addEventListener("click", () => {trackEvent("exportDocx", "main", model.spaces);});
 	document.getElementById("importDataBtn").addEventListener("click", () => {trackEvent("importJson", "main", {});});
 	document.getElementById("exportDataBtn").addEventListener("click", () => {trackEvent("exportJson", "main", model.spaces);});
-	document.getElementById("load_example_button").addEventListener("click", () => {trackEvent("loadExample", "main", {});});
+	
+	// 
+	//document.getElementById("load_example_button").addEventListener("click", () => {trackEvent("loadExample", "main", {});});
 	
 }
 
