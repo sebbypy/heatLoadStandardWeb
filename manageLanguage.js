@@ -25,6 +25,34 @@ function switchLanguage(lang) {
     document.querySelectorAll("[lang-key]").forEach(function(element) {
 		updateElementLanguage(element,lang)
 	})
+	
+	document.querySelectorAll("[url-key]").forEach(function(element){
+		updateElementUrl(element,lang)
+	})
+	
+	document.querySelectorAll("[src-key]").forEach(el => updateImageSrc(el, lang));
+
+}
+
+function updateElementUrl(element, lang) {
+	
+	
+    var key = element.getAttribute("url-key");
+    if (!key) return; // Skip if no language key is found
+
+    var translation = translations[lang][key] || key;
+
+    element.setAttribute("href",translation);
+}
+
+
+function updateImageSrc(element, lang) {
+    var key = element.getAttribute("src-key");
+    if (!key) return;
+
+    var translation = translations[lang][key] || key;
+
+    element.setAttribute("src", translation);
 }
 
 

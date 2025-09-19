@@ -1,38 +1,81 @@
 #home{
-	font-size:20px;
+	font-size:18px;
 	line-height:150%;
-	
+}
+
+body{
+font-family: neue-haas-unica,sans-serif;
+color: #495057;
+font-size: 16px;
+background-color: #fffbfb; /*alternative #eee for light grey */
+margin:0px;	
 }
 
 
+svg.icon-small { width: 25px; height: 25px; }
+
+.material-symbols, svg.icon-large {
+	width: 40px; 
+	height: 40px;
+	font-size:40px  /*for google material icons*/
+	}
+
+
+.material-symbols-inline{
+	/*width:50px ; */
+	font-size:20px;
+	padding: 0px;
+}
+
+
+
+button svg * { stroke: currentColor; }
 
 table {
 	width: 100%;
 	border-collapse: collapse;
 }
 table, th, td {
-	border: 1px solid #ddd;
+	/*border: 1px solid #ddd;*/
 }
 th, td {
 	padding: 2px;
 	text-align: center;
 	min-height:30px;
 }
-th {
-	background-color: #f2f2f2;
+tr:nth-child(even) {
+	background-color: #f8fafb;
 }
+tbody tr:hover {
+    background-color: rgb(18 93 119 / 25%);
+}
+
+th {
+	/*background-color: #f2f2f2;*/
+	border-bottom: .5px solid #0087b7;
+}
+
+.total-row{
+	font-weight: bold;
+	border-top: .5px solid #0087b7;
+	
+	/*background-color: #f2f2f2;*/
+}
+
+
 input[type="text"], input[type="number"], select, multilevelselect {
 	box-sizing: border-box;
 }
 
 table tr {
-  min-height: 30px; /* Set your desired minimum height */
-  height: 30px; /* Ensures consistency */
+  min-height: 40px; /* Set your desired minimum height */
+  height: 40px; /* Ensures consistency */
 }
 
 table td, table th {
-  min-height: 30px; 
-  line-height: 30px; 
+  min-height: 40px; 
+  /*line-height: 40px; */
+  height:40px;
 }
 
 
@@ -42,7 +85,40 @@ button, input[type=submit], select, multilevelselect, input[type=number], input[
   cursor: pointer;
   background-color: #fff	;
   font-size:16px;
-  border-radius: 4px;
+  border-radius: 3px;
+  color: #4e636d;
+
+}
+
+button{
+	color: #4e636d;
+	border: none
+	
+}
+table tr button{
+	background-color: transparent
+}
+
+.button-primary {
+	background-color: #0087b7	;
+	color:#fff;
+	border-radius:20px;
+	padding-right:20px;
+	padding-left: 20px;
+	font-size:16px;
+	font-weight: 600;
+	height:40px;
+}
+.button-secondary {
+	color: #0087b7;
+	background-color:#fff;
+	border-radius:20px;
+	padding-right:20px;
+	padding-left: 20px;
+	font-size:16px;
+	font-weight: 600;
+	height:40px;
+	border: 1px solid #0087b7
 }
 
 input[type=number]{
@@ -54,7 +130,16 @@ input[type=number]{
 input[type=checkbox]{
 	width:20px;
 	height:20px;
-}
+	cursor:pointer;
+	margin: 3px 3px;
+	padding-left:3px;
+	padding-right:20px;
+	border-radius:4px;
+	accent-color: #0087b7;
+	font-weight: 500;
+	    vertical-align: middle;
+
+}   
 
 .tab {
 	margin: 3px 3px;
@@ -70,8 +155,10 @@ input[type=checkbox]{
 	color:white;
 	border-color:white;
 	font-size:32px;
-	padding:5px;
-	width:2.5rem
+	padding:0px;
+	width:2.5rem;
+	font-weight:500;
+	border-radius:0px;
 	
 }
 
@@ -82,6 +169,12 @@ select, multilevelselect{
 width:250px;
  border-radius: 4px; }
 
+option{
+	border: 2px solid #dddddd;
+	
+}
+
+
 #layersTable .rightalign {
 	text-align:center;
 }
@@ -90,13 +183,6 @@ vertical-align: text-top;
 }
 
 
-body{
-font-family: neue-haas-unica,sans-serif;
-color: #495057;
-font-size: 16px;
-background-color: #fffbfb; /*alternative #eee for light grey */
-margin:0px;	
-}
 
   .container
 {
@@ -134,16 +220,6 @@ margin:0px;
 	margin-top:10px;
 }
 
-.material-symbols{
-	/*width:50px ; */
-	font-size:40px;
-}
-
-.material-symbols-inline{
-	/*width:50px ; */
-	font-size:20px;
-	padding: 0px;
-}
 
 
 .sidebar a {
@@ -193,10 +269,6 @@ margin:0px;
     top: 10px;
 }
 
-.total-row{
-	font-weight: bold;
-	background-color: #f2f2f2;
-}
 
 
 /*
@@ -237,6 +309,7 @@ table th {
     transform: translateX(-50%);
     opacity: 0;
     transition: opacity 0.3s;
+	line-height:20px;
 }
 
 .tooltip:hover .tooltiptext {
@@ -331,3 +404,36 @@ table th {
 
 /*#maintabs { display: flex; flex-direction: column; height: 100%; }*/
 .spacer { height:250px }   
+
+
+
+
+
+
+/* modal dialog*/
+
+
+dialog {
+	color: #495057;
+
+	background-color: #fff;
+    border-radius: 3px;
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,.08);
+    /*font-family: Roboto,sans-serif;*/
+    margin: auto;
+    max-height: 80vh;
+    max-width: 1480px;
+    min-width: 600px;
+    overflow: auto;
+    padding: 32px;
+    pointer-events: auto;
+	border: none;
+    outline: none;
+
+}
+
+/*img {
+  border: 2px solid #495057;   
+  border-radius: 4px;      
+}
+*/

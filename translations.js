@@ -14,7 +14,7 @@ var translations = {
         "u_value": "Valeur U",
         "thermal_bridge_coefficient": "Coefficient de pont thermique",
         "ventilation": "Ventilation",
-        "wall_elements": "Parois et isolation",
+        "wall_elements": "Parois et isolation (U)",
         "natural_supply_flowrate": "Débit d'alimentation naturelle [m³/h]",
         "mechanical_supply_flowrate": "Débit d'alimentation mécanique [m³/h]",
         "transfer_flowrate": "Débit de transfert [m³/h]",
@@ -229,7 +229,16 @@ var translations = {
         "disclaimer_title": "Disclaimer",
         "disclaimer_texte": "DISCLAIMER TO WRITE",
         "load_example": "Charger l'exemple",
-        "home": "Home"
+        "home": "Home",
+		"ask_your_question": "Un bug? Un problème ? Posez nous votre question sur ",
+		"support_url": "https://www.buildwise.be/fr/demandes/services-complementaires/",
+		"connect_bw_account": 'Si vous possédez un compte "MonBuildwise", vous pourrez vous connecter pour un meilleur suivi de votre demande',
+		"help_screenshot": "images/help_fr.jpg",
+		"close":"Fermer",
+		"help":"Aide",
+		"support_title": "Aide et support",
+		"support_text": "Cliquez sur l'icone '?' en haut à droite de l'écran"
+
 
     },
     'nl': {
@@ -462,7 +471,16 @@ var translations = {
         "disclaimer_title": "Disclaimer",
         "disclaimer_texte": "DISCLAIMER NOG TE SCHRIJVEN",
         "load_example": "Voorbeeld laden",
-        "home": "Home"
+        "home": "Home",
+		"ask_your_question": "Een bug? Een issue ? Stel uw vraag op ",
+		"support_url": "https://www.buildwise.be/nl/aanvragen/aanvullende-diensten/",
+		"connect_bw_account": 'Als u een "MijnBuildwise" account hebt, kan u inloggen voor een beter opvolging van uw aanvraag',
+		"help_screenshot": "images/help_nl.jpg",
+		"close":"Sluiten",
+		"help":"Hulp",
+		"support_title": "Hulp en support",
+		"support_text": "Klik '?' bovenrechts van uw scherm"
+
 
     },
 

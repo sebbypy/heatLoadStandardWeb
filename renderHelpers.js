@@ -235,3 +235,61 @@ function forceTwoEqualColumns(table) {
     cell.style.width = '50%';
   }
 }
+
+
+
+function createDeleteButton(onClick){
+	const button = document.createElement('button');
+	button.innerHTML = getIcon('trash-2','icon-small')
+
+	if (typeof onClick === 'function') {
+		button.addEventListener('click', onClick);
+	}
+
+
+	return button
+}
+
+
+
+function createDialog(dialogid,title='',text='',img=''){
+	
+	var dialog = createElement('dialog',{},'',[])
+	var header = createElement('h2',{},'Help center',[])
+	
+	var p = createElement('p',{},'',[
+		createElement('span',{'lang-key':'ask_your_question'},'Posez-nous vos questions sur ',[]),
+		createElement('a',{'url-key': 'support_url', 'lang-key':'support_url', 'href':"https://www.buildwise.be/fr/demandes/services-complementaires/"},'https://www.buildwise.be/fr/demandes/services-complementaires/',[]),
+	])
+	var p2 = createElement('p',{'lang-key':'connect_bw_account'},'Si vous avez un compte Buildwise, vous pouvez-vous connecter pour un meilleur suivi de votre demande',[])
+	
+	
+	var img = createElement('div',{},'',[createElement('img',{'id':'help_img',
+														'src-key':'help_screenshot',
+														'src':'images/help_fr.jpg',
+														'alt':'screenshot', 
+														'width':'700px',
+														'style':"border: 2px solid; border-radius:4px"
+														},'',[])])
+	
+	
+
+
+
+	var closeBtn = createElement('button',{'lang-key':'close','class':'button-primary'},'',[])
+	
+	dialog.setAttribute('id',dialogid)
+	
+	dialog.appendChild(header)
+	dialog.appendChild(p)
+	dialog.appendChild(p2)
+	dialog.appendChild(img)
+	dialog.appendChild(closeBtn)
+
+	closeBtn.addEventListener('click',()=> dialog.close())
+	
+
+
+	return dialog
+	
+}

@@ -10,14 +10,14 @@ function initializePage(container_id) {
 
     // Data Buttons Section
     const dataButtons = createElement('div', { class: 'data-buttons' }, '', [
-		createElement('button', { id: 'exportDataBtn' }, '',[createElement('i',{'class':'material-symbols'},'save')],tooltipKey=translate("export")),
-
-        createElement('button', {id: 'importDataBtn' }, '',[createElement('i',{'class':'material-symbols'},'folder_open')], tooltipKey=translate("load")),
+		createElement('button', { id: 'exportDataBtn' }, '',[],tooltipKey=translate("export")),
+        createElement('button', {id: 'importDataBtn' }, '',[], tooltipKey=translate("load")),
 		createElement('input', { id: 'fileInput', type: 'file', style: 'display: none;', onchange: () => importData(this), accept: '.json' }),
-
-		createElement('button', { id: 'exportPdfBtn' }, '',[createElement('i',{'class':'material-symbols'},'picture_as_pdf')]),
-		createElement('button', { id: 'exportDocxBtn' }, '',[createElement('i',{'class':'material-symbols'},'')]),
-		createElement('button', { id: 'resetData' }, '',[createElement('i',{'class':'material-symbols'},'cancel')],tooltipKey=translate("reset"))
+		createElement('button', { id: 'exportPdfBtn' }, '',[]),
+		createElement('button', { id: 'exportDocxBtn' },'',[]),
+		//createElement('button', { id: 'resetData' }, '',[createElement('i',{'class':'material-symbols'},'cancel')],tooltipKey=translate("reset"))
+		createElement('button', { id: 'resetData' }, '',[],tooltipKey=translate("reset")),
+		createElement('button', { id: 'helpButton' }, '',[],tooltipKey=translate("help"))
 	
     ]);
 	//createElement('button', { id: 'exportDocxBtn' }, '',[getIcon("docx")])
@@ -39,6 +39,7 @@ function initializePage(container_id) {
 	const home = createElement('div', { id: 'home', class: 'main-section' }, '', [])
     
 	
+	const helpDialog = createDialog('helpdialog')
 	
 	
    // Spaces Section
@@ -46,15 +47,18 @@ function initializePage(container_id) {
         createElement('h2', { 'lang-key': 'spaces' }, 'Espaces'),
         createElement('button', { onclick: handleAddSpace ,class:'add-button'}, '+'),
         createElement('table', { id: 'tableSpaces' }, '', [
-            createElement('tr', {}, '', [
-                createElement('th', { 'lang-key': 'space_name' }, 'Nom de l’espace'),
-                createElement('th', { 'lang-key': 'space_temperature' }, 'Température (°C)'),
-                createElement('th', { 'lang-key': 'floor_area' }, 'Surface au sol (m²)'),
-                createElement('th', { 'lang-key': 'inner_volume' }, 'Volume intérieur (m³)'),
-                createElement('th', { 'lang-key': 'average_height' }, 'Hauteur moyenne (m)'),
-                createElement('th', { 'lang-key': 'heating_type' }, 'Type de chauffage'),
-                createElement('th', { }, '' )
-            ])
+			createElement('thead',{},'',[
+				createElement('tr', {}, '', [
+					createElement('th', { 'lang-key': 'space_name' }, 'Nom de l’espace'),
+					createElement('th', { 'lang-key': 'space_temperature' }, 'Température (°C)'),
+					createElement('th', { 'lang-key': 'floor_area' }, 'Surface au sol (m²)'),
+					createElement('th', { 'lang-key': 'inner_volume' }, 'Volume intérieur (m³)'),
+					createElement('th', { 'lang-key': 'average_height' }, 'Hauteur moyenne (m)'),
+					createElement('th', { 'lang-key': 'heating_type' }, 'Type de chauffage'),
+					createElement('th', { }, '' )
+				])
+			]),
+			createElement('tbody',{id: 'tableSpacesBody'},'',[])
         ])
     ]);
 
@@ -76,16 +80,19 @@ function initializePage(container_id) {
 			createElement('span',{'lang-key':'year_external_temperature'},''),
 			createElement('span',{id:'year_external_temperature'},'-7 °C')
 			]),
-		createElement('button',{onclick: handleSetDefaultBoundaryTemperatures,'lang-key':'apply_default_temperatures'},''),
+		createElement('button',{'class':'button-primary',onclick: handleSetDefaultBoundaryTemperatures,'lang-key':'apply_default_temperatures'},''),
 		createElement('p',{},''),
         createElement('button', { onclick: handleAddBoundary , class:'add-button'}, '+'),
         createElement('table', { id: 'tableBCS' }, '', [
-            createElement('tr', {}, '', [
-                createElement('th', { 'lang-key': 'bc_name' }, 'Nom de l’espace ou de l’environnement'),
-                createElement('th', { 'lang-key': 'bc_type' }, 'Type d’espace/d’environnement'),
-                createElement('th', { 'lang-key': 'bc_temperature' }, 'Température'),
-                createElement('th', {}, '')
-            ])
+			createElement('thead',{},'',[
+				createElement('tr', {}, '', [
+					createElement('th', { 'lang-key': 'bc_name' }, 'Nom de l’espace ou de l’environnement'),
+					createElement('th', { 'lang-key': 'bc_type' }, 'Type d’espace/d’environnement'),
+					createElement('th', { 'lang-key': 'bc_temperature' }, 'Température'),
+					createElement('th', {}, '')
+				])
+			]),
+			createElement('tbody',{id:'tableBCSBody'},'',[])
         ])
     ]);
 
@@ -140,6 +147,7 @@ function initializePage(container_id) {
         createElement('h2', { 'lang-key': 'walls' }, 'Murs'),
         createElement('button', { onclick: handleAddWallElement, class:'add-button' }, '+'),
         createElement('table', { id: 'tableMurs' }, '', [
+			createElement('thead',{},'',[
             createElement('tr', {}, '', [
                 createElement('th', { 'lang-key': 'wall_name' }, 'Nom du wall'),
                 createElement('th', { 'lang-key': 'u_value' }, 'Valeur U'),
@@ -147,6 +155,8 @@ function initializePage(container_id) {
                 createElement('th', { 'lang-key': 'is_floor_heating' }, 'Plancher ou mur chauffant ',[],tooltipText='floor_heating_tooltip'),
                 createElement('th', {}, '')
             ])
+			]),
+			createElement('tbody',{id:'tableMursBody'},'',[])
         ])
     ]);
 
@@ -191,7 +201,8 @@ function initializePage(container_id) {
         reheatContainer,
         resultsContainer,
 		radiatorsContainer,
-		floorHeatingContainer
+		floorHeatingContainer,
+		helpDialog
 	)
 
 
@@ -209,17 +220,26 @@ function initializePage(container_id) {
 	
 	
 	document.getElementById('exportDataBtn').addEventListener('click', openFilenameModal);
+	document.getElementById('exportDataBtn').insertAdjacentHTML("beforeend",getIcon('download','icon-large'))  // adding Icon
+
 	document.getElementById('importDataBtn').addEventListener('click', function() {
     document.getElementById('fileInput').click(); // Trigger the hidden file input click
 	});	
+	document.getElementById('importDataBtn').insertAdjacentHTML("beforeend",getIcon('upload','icon-large'))  // adding Icon
+
 	document.getElementById('exportPdfBtn').addEventListener('click',exportPageToPDF)
+	document.getElementById('exportPdfBtn').insertAdjacentHTML("beforeend",getIcon('picture_as_pdf','icon-large'))  // adding Icon
 
 	document.getElementById('exportDocxBtn').addEventListener('click',exportToWord)
-	document.getElementById('exportDocxBtn').insertAdjacentHTML("beforeend",getDocx())  // adding Icon
-	
+	document.getElementById('exportDocxBtn').insertAdjacentHTML("beforeend",getIcon('docx','icon-large'))  // adding Icon
+
 	
 	document.getElementById('resetData').addEventListener('click',resetPage)
+	document.getElementById('resetData').insertAdjacentHTML("beforeend",getIcon('x-circle','icon-large'))  // adding Icon
 
+
+	document.getElementById('helpButton').insertAdjacentHTML("beforeend",getIcon('help-circle','icon-large'))  // adding Icon
+	document.getElementById('helpButton').addEventListener('click',()=> document.getElementById('helpdialog').showModal())
 
 
 }
@@ -247,6 +267,8 @@ function renderAll(){
 	renderResults()
 	renderRadiators()
 	renderFloorHeating()
+	feather.replace({ width: 40, height: 40 })
+	//feather.replace()
 	switchLanguage(getCurrentLanguage())
 
 
@@ -262,17 +284,17 @@ function renderMainTabs() {
     var fixedTabs = ['home','spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
     //var fixedTabs = ['spaces','boundaryconditions', 'ventilation','wall_elements', 'spacesContainer','reheatdiv','results','radiators','floorheating']
 
-	var icons = [`<span class="material-symbols">home</span>`,
-				`<span class="material-symbols">space_dashboard</span>`,
-				`<span class="material-symbols">thermostat</span>`,
-				`<span class="material-symbols">air</span>`,
-				getIcon('insulation'),
-				getIcon('areas'),
-				getIcon('reheat'),
-				`<span class="material-symbols">calculate</span>`,
-				getIcon('radiator'),
-				`<span class="material-symbols">nest_true_radiant</span>`,
-				`<span class="material-symbols">check_box</span>`,
+	var icons = [//`<span class="material-symbols">home</span>`,
+				getIcon('home','icon-large'),
+				getIcon('layout','icon-large'),
+				getIcon('thermometer','icon-large'),
+				getIcon('wind','icon-large'),
+				getIcon('insulation','icon-large'),
+				getIcon('areas','icon-large'),
+				getIcon('reheat','icon-large'),
+				getIcon('calculate','icon-large'),
+				getIcon('radiator','icon-large'),
+				getIcon('nest_true_radiant','icon-large')
 				]
 			
 	
@@ -422,9 +444,11 @@ function renderHome(){
 				createElement("p",{'lang-key':'intro_text'},"intro_text",[]),
 				createElement("h2",{'lang-key':'save_load_export_title'},"save_load_export_title",[]),
 				createElement("p",{'lang-key':'save_load_export_text'},"save_load_export_text",[]),
+				createElement("h2",{'lang-key':'support_title'},"support_title",[]),
+				createElement("p",{'lang-key':'support_text'},"support_text",[]),
 				createElement("h2",{'lang-key':'example_title'},"example_title",[]),
 				createElement("p",{'lang-key':'example_text'},"example_text",[]),
-				createElement("button",{'id':'load_example_button','lang-key':'load_example'},"push_me",[]),
+				createElement("button",{'id':'load_example_button','lang-key':'load_example','class':'button-primary'},"push_me",[]),
 				createElement("div",{'id':'example1_img'},"",[]),
 				createElement("h2",{'lang-key':'disclaimer_title'},"disclaimer_title",[]),
 				createElement("p",{'lang-key':'disclaimer_text'},"disclaimer_text",[])
@@ -454,21 +478,22 @@ function renderHome(){
 // SPACES
 
 function renderSpacesTable() {
-    const table = document.getElementById('tableSpaces');
+    const tablebody = document.getElementById('tableSpacesBody');
     // Clear existing table rows except for the header
-    while (table.rows.length > 1) {
-        table.deleteRow(1);
-    }
+    /*while (tablebody.rows.length > 1) {
+        tablebody.deleteRow(1);
+    }*/
+	tablebody.innerHTML = ""
 
     // Re-add rows for all remaining spaces
     model.spaces.forEach((space, index) => {
 		if (space.type == "heated"){
-			renderSpaceRow(table, space, index);
+			renderSpaceRow(tablebody, space, index);
 		}
     });
 	
 	
-	addTotalRow(table,[null,model.getTotalFloorArea(),model.getTotalVolume(),null,null,null],1)
+	addTotalRow(tablebody,[null,model.getTotalFloorArea(),model.getTotalVolume(),null,null,null],1)
    
 
 }
@@ -505,8 +530,7 @@ function renderSpaceRow(table, space) {
     //row.insertCell(5).innerHTML = `<button onclick="handleDeleteSpace(${space.id})">Delete</button>`;
 
     const cell = row.insertCell(6)
-    const button = document.createElement('button');
-    button.innerHTML = '<i class="material-symbols">delete</i>'
+	const button = createDeleteButton()
 	button.onclick = () => handleDeleteSpace(space.id);
 	cell.appendChild(button)
 
@@ -566,8 +590,7 @@ function renderBoundaryRow(table, space, index) {
 	}
 	else{
 		const cell = row.insertCell(3)
-		const button = document.createElement('button');
-		button.innerHTML = '<i class="material-symbols">delete</i>'
+		const button = createDeleteButton()
 		button.onclick = () => handleDeleteSpace(space.id);
 		cell.appendChild(button)
 
@@ -587,11 +610,8 @@ function renderBoundariesTable() {
 	
 	//Render table
 	
-    const table = document.getElementById('tableBCS');
-    // Clear existing table rows except for the header
-    while (table.rows.length > 1) {
-        table.deleteRow(1);
-    }
+    const table = document.getElementById('tableBCSBody');
+   table.innerHTML = ""
 
     // Re-add rows for all remaining spaces
     model.spaces.forEach((space, index) => {
@@ -622,10 +642,13 @@ function renderResults(){
     // Create the table element
     const table = document.createElement("table");
 	table.setAttribute('id',"heatloss_table")
-    table.border = "1"; // Optional: adds a border to the table
+    //table.border = "1"; // Optional: adds a border to the table
 
     // Create the table header row
+	const thead = document.createElement('thead');
+	const tbody = document.createElement('tbody')
     const headerRow = document.createElement("tr");
+	thead.appendChild(headerRow)
     headers_keys.forEach(header => {
         const th = document.createElement("th");
 		th.setAttribute('lang-key',header)
@@ -633,7 +656,8 @@ function renderResults(){
 
         headerRow.appendChild(th);
     });
-    table.appendChild(headerRow);
+    table.appendChild(thead);
+	table.appendChild(tbody)
 
 	let totals = [0, 0, 0, 0, null]; // For transmission_heat_loss, ventilation_heat_loss, heatup_loss, total_heat_loss 
 
@@ -668,7 +692,7 @@ function renderResults(){
 				if (totals[index]!=null){totals[index] += value;}
             });
 
-            table.appendChild(row);		}
+            tbody.appendChild(row);		}
     });
 	
 	
@@ -689,7 +713,7 @@ function renderResults(){
 			totalRow.appendChild(totalCell);
 		
     });
-    table.appendChild(totalRow);
+    tbody.appendChild(totalRow);
 
 
     // Clear previous content in 'results' and append the new table
@@ -758,8 +782,7 @@ function renderWallElementRow(table, wElement) {
 
     //row.insertCell(3).innerHTML = `<button onclick="handleDeleteWallElement(${wElement.id})">Delete</button>`;
 	const cell = row.insertCell(4)
-    const button = document.createElement('button');
-    button.innerHTML = '<i class="material-symbols">delete</i>'
+    const button = createDeleteButton()
 	button.onclick = () => handleDeleteWallElement(wElement.id);
 	cell.appendChild(button)
 
@@ -794,6 +817,7 @@ function renderWallInstances() {
 			var tab = document.createElement('button');
 			tab.textContent = space.name;
 			tab.setAttribute('class','tab');
+			tab.classList.add('button-secondary')
 			tab.id = 'tab-space-' + index;
 			tab.onclick = function () {
 				toggleVisibility(`space-${index}`);
@@ -839,7 +863,11 @@ function renderWallInstances() {
 			spaceDiv.appendChild(table);
 
 			// Add table header
+			const tableHeader = document.createElement('thead');
+			const tableBody = document.createElement('tbody');
 			const headerRow = document.createElement('tr');
+			table.appendChild(tableHeader)
+			table.appendChild(tableBody)
 
 			var cols=[]
 
@@ -859,7 +887,7 @@ function renderWallInstances() {
 				th.textContent = translations[getCurrentLanguage()][key] || key;
 				headerRow.appendChild(th);
 			});
-			table.appendChild(headerRow);
+			tableHeader.appendChild(headerRow);
 
 			// Add rows for each wall instance
 				model.wallInstances
@@ -954,15 +982,13 @@ function renderWallInstances() {
 
 						// Delete Button
 						const actionsCell = document.createElement('td');
-						const deleteButton = document.createElement('button');
-						deleteButton.innerHTML = '<i class="material-symbols">delete</i>'
 
-
+						const deleteButton = createDeleteButton()
 						deleteButton.onclick = () => handleDeleteWallInstance(wall.id, index);
 						actionsCell.appendChild(deleteButton);
 						row.appendChild(actionsCell);
 
-						table.appendChild(row);
+						tableBody.appendChild(row);
 						
 					});
 
@@ -994,7 +1020,7 @@ function renderWallInstances() {
 
 
 
-			table.appendChild(totalRow);
+			tableBody.appendChild(totalRow);
 			
 			container.appendChild(spaceDiv);
 			//space.transmission_heat_loss = spaceTotalLoss
@@ -1007,11 +1033,8 @@ function renderWallInstances() {
 }
 
 function renderWallElements() {
-    const table = document.getElementById('tableMurs');
-    // Clear existing table rows except for the header
-    while (table.rows.length > 1) {
-        table.deleteRow(1);
-    }
+    const table = document.getElementById('tableMursBody');
+	table.innerHTML = ""
 
     // Re-add rows for all remaining wall elements
     model.wallElements.forEach(wElement => {
@@ -1050,6 +1073,7 @@ function renderVentilationTable() {
 
 
     // Create the header row for spaces
+	var tableHeader = document.createElement('thead');
     var headerRow = document.createElement('tr');
 	var headerElement = document.createElement('th');
 	headerElement.setAttribute('lang-key','space')
@@ -1077,9 +1101,9 @@ function renderVentilationTable() {
 	th.setAttribute('lang-key', 'ventilation_loss');
 	th.textContent = translations[getCurrentLanguage()]["ventilation_loss"];
 	headerRow.appendChild(th);
-    
+    tableHeader.append(headerRow);
 	
-    table.appendChild(headerRow);
+    table.appendChild(tableHeader);
 
 	// Initialize totals object
 	var totals = {
@@ -1092,6 +1116,8 @@ function renderVentilationTable() {
 		balance:null,
 		loss:0
 	};
+
+	var tbody = document.createElement('tbody')
 
     // Create rows for each space
     model.spaces.forEach(space => {
@@ -1142,9 +1168,11 @@ function renderVentilationTable() {
 			totals['loss'] += space.ventilation.ventilation_loss
 			
 
-			table.appendChild(row);
+			tbody.appendChild(row);
 		}
     });
+	
+	table.append(tbody)
 	
 	// Add total row
     var totalRow = document.createElement('tr');
@@ -1171,7 +1199,7 @@ function renderVentilationTable() {
     //var emptyCell = document.createElement('td');
     //totalRow.appendChild(emptyCell);
 
-    table.appendChild(totalRow);
+    tbody.appendChild(totalRow);
 }
 
 function renderTransferFlowsTable() {
@@ -1193,20 +1221,25 @@ function renderTransferFlowsTable() {
 			createElement('br',{},''),
 			createElement('button', { onclick: ()=> handleAddTransfer() ,class:'add-button'}, '+'),
 			createElement('table',{'id':'transferFlowsTable'},'',[
-				createElement('tr', {}, '', [
-					createElement('th', { 'lang-key': 'from_space' }, 'from'),
-					createElement('th', { 'lang-key': 'to_space' }, 'to'),
-					createElement('th', { 'lang-key': 'flowrate' }, 'flowrate'),
-					createElement('th', {},'')]
-				)]
+				createElement('thead',{},'',[
+					createElement('tr', {}, '', [
+						createElement('th', { 'lang-key': 'from_space' }, 'from'),
+						createElement('th', { 'lang-key': 'to_space' }, 'to'),
+						createElement('th', { 'lang-key': 'flowrate' }, 'flowrate'),
+						createElement('th', {},'')
+						])
+					]),
+				createElement('tbody',{'id':'transferFlowsTableBody'},'',[])
+				]
 			)]
 		))
 	}
 	
-	var table = document.getElementById('transferFlowsTable');
-	while (table.rows.length > 1) {
+	var table = document.getElementById('transferFlowsTableBody');
+	/*while (table.rows.length > 1) {
         table.deleteRow(1);
-    }
+    }*/
+	table.innerHTML=""
 	
 	
 	model.airTransfers.transferFlows.forEach(transfer => {
@@ -1215,7 +1248,7 @@ function renderTransferFlowsTable() {
 				createElement('td', {}, '', [ createElement('select', {'id':'transfer'+transfer.id+"-from"}, '', model.spaces.filter(space => space.type === 'heated').map(space => createElement('option', {'value':space.id}, space.name))) ]),
 				createElement('td', {}, '', [ createElement('select', {'id':'transfer'+transfer.id+"-to"}, '', model.spaces.filter(space => space.type === 'heated').map(space => createElement('option', {'value':space.id}, space.name))) ]),
 				createElement('td', {}, '', [createElement('input', {'id':'transfer'+transfer.id+"-flowrate", type: 'number', min: '0' })]),
-				createElement('td', {}, '', [createElement('button',{onclick: () => {handleDeleteTransfer(transfer.id)}},'',[createElement('i',{class:'material-symbols'},'delete')])])
+				createElement('td', {}, '', [createDeleteButton( () => {handleDeleteTransfer(transfer.id)})])
 				
 			])
 		)
@@ -1434,7 +1467,7 @@ function renderRadiators(){
 			onchange: handleReturnTemperatureChange
 			},''),
 		createElement('h3',{'lang-key':'spaces'},translate('spaces')),
-		createElement('table',{id:'radiators_table'},'')
+		createElement('table',{id:'radiators_table'},'',[])
 		]
 		)
 			
@@ -1524,7 +1557,7 @@ function renderFloorHeating(){
 						createElement('h3',{'lang-key':'floor_system'},'floor_system',[]),
 						createElement('select',{'id':'floor_system_select'},'',[]),
 						createElement('span',{},'    ',[]),
-						createElement('button',{'id':'editFloorSystemsBtn','lang-key':"editFloorSystemsBtn"},'editFloorSystem',[]),
+						createElement('button',{'class':'button-primary','id':'editFloorSystemsBtn','lang-key':"editFloorSystemsBtn"},'editFloorSystem',[]),
 						createElement('h3',{'lang-key':'ref_loop'},'ref_loop',[]),
 						//createElement('select',{'id':'ref_loop_select'},'',[]),
 						createElement('table',{'id':'ref_loop_table'},'',[]),
@@ -1961,15 +1994,15 @@ function renderFloorSystems(){
 	//table 
 	
 	var floorsystemdiv = createElement('div',{id:'floorsystems-div'},'',[
-							createElement('button',{id:'backToFloorSizing','lang-key':'backToFloorSystemSizing'},'back_to_sizing',[]),
+							createElement('button',{id:'backToFloorSizing','lang-key':'backToFloorSystemSizing','class':'button-primary'},'back_to_sizing',[]),
 							createElement('h2',{'lang-key':'floorsystems'},'',[]),
 							createElement('select',{id:'floorsystemeditor-select'},'',[]),
 							createElement('span',{},'    ',[]),
-							createElement('button',{id:'createNewFloorsSystemBtn','lang-key':'createnewfloorsystem'},'createnewfloorsystem',[]),
+							createElement('button',{id:'createNewFloorsSystemBtn','lang-key':'createnewfloorsystem','class':'button-primary'},'createnewfloorsystem',[]),
 							createElement('span',{},'    ',[]),
-							createElement('button',{id:'saveSystemDataBtn','lang-key':'save system data'},'save system data',[]),
+							createElement('button',{id:'saveSystemDataBtn','lang-key':'save system data','class':'button-primary'},'save system data',[]),
 							createElement('span',{},'    ',[]),
-							createElement('button',{id:'deleteSystemDataBtn','lang-key':'delete system'},'delete system',[]),
+							createElement('button',{id:'deleteSystemDataBtn','lang-key':'delete system','class':'button-primary'},'delete system',[]),
 							createElement('h3',{'lang-key':'floorsystem_name_header'},'',[]),
 							createElement('p',{},'',[
 								createElement('input',{type:'text',id:'floorsystem_name_input'},'',[])
