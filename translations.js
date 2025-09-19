@@ -237,7 +237,8 @@ var translations = {
 		"close":"Fermer",
 		"help":"Aide",
 		"support_title": "Aide et support",
-		"support_text": "Cliquez sur l'icone '?' en haut à droite de l'écran"
+		"support_text": "Cliquez sur l'icone '?' en haut à droite de l'écran",
+		"img_example1":"images/example1_fr.svg"
 
 
     },
@@ -479,7 +480,8 @@ var translations = {
 		"close":"Sluiten",
 		"help":"Hulp",
 		"support_title": "Hulp en support",
-		"support_text": "Klik '?' bovenrechts van uw scherm"
+		"support_text": "Klik '?' bovenrechts van uw scherm",
+		"img_example1":"images/example1_nl.svg"
 
 
     },

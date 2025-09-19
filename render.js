@@ -449,7 +449,9 @@ function renderHome(){
 				createElement("h2",{'lang-key':'example_title'},"example_title",[]),
 				createElement("p",{'lang-key':'example_text'},"example_text",[]),
 				createElement("button",{'id':'load_example_button','lang-key':'load_example','class':'button-primary'},"push_me",[]),
-				createElement("div",{'id':'example1_img'},"",[]),
+				createElement("div",{'id':'example1_img'},"",[
+					createElement('img',{'src-key':'img_example1','src':'example1','style':'width:700px'},"",[])
+					 ]),
 				createElement("h2",{'lang-key':'disclaimer_title'},"disclaimer_title",[]),
 				createElement("p",{'lang-key':'disclaimer_text'},"disclaimer_text",[])
 			
@@ -465,7 +467,7 @@ function renderHome(){
 	document.getElementById("load_example_button").addEventListener("click", () => {trackEvent("loadExample", "main", {});});
 
 
-	document.getElementById('example1_img').innerHTML = getImage('example1')
+	//document.getElementById('example1_img').innerHTML = getImage('example1')
 	
 	
 }
