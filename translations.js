@@ -183,9 +183,9 @@ var translations = {
         "loops_details": "Boucle(s) et surface (m²)",
         "grouped": "Groupé avec autre boucle",
         "loopname": "Nom de la boucle",
-        "heatedarea": "Af (m²)",
+        "heatedarea": "A<sub>f</sub> (m²)",
         "totalheatload": "ϕ (W)",
-        "mean_air_T": "θi (°C)",
+        "mean_air_T": "θ<sub>i</sub> (°C)",
         "tubeSpacing": "Ta (cm)",
         "deltaH": "ΔθH",
         "sigma": "σ",
@@ -238,7 +238,18 @@ var translations = {
 		"help":"Aide",
 		"support_title": "Aide et support",
 		"support_text": "Cliquez sur l'icone '?' en haut à droite de l'écran",
-		"img_example1":"images/example1_fr.svg"
+		"img_example1":"images/example1_fr.svg",
+		"resistance_of_floor_cover":"Résistance thermique du revêtement de sol",
+		"tube_spacing":"Ecartement des tubes",
+		"len_from_collector":"Longueur de tube entre le collecteur et la zone",
+		"tube_length":"Longueur totale du tube",
+		"temperature_under":"Température dans l'espace inférieur",
+		"resistance_upper":"Résistance thermique de la partie haute du plancher",
+		"resistance_under":"Résistance thermique de la partie basse du plancher",
+		"loss_below_m2":"Déperdition surfacique vers le bas",
+		"loss_below_abs":"Déperdition totale vers le bas"
+
+		
 
 
     },
@@ -481,7 +492,16 @@ var translations = {
 		"help":"Hulp",
 		"support_title": "Hulp en support",
 		"support_text": "Klik '?' bovenrechts van uw scherm",
-		"img_example1":"images/example1_nl.svg"
+		"img_example1":"images/example1_nl.svg",
+		"resistance_of_floor_cover":"Thermische weerstand van de vloerbekleding",
+		"tube_spacing":"Buisafstand",
+		"len_from_collector":"Lengte buis tussen de collector en de zone",
+		"tube_length":"Totale buislengte",
+		"temperature_under":"Temperatuur in de onderliggende ruimte",
+		"resistance_upper":"Thermische weerstand van het bovenste deel van de vloer",
+		"resistance_under":"Thermische weerstand van het onderste deel van de vloer",
+		"loss_below_m2":"Oppervlakteverlies naar beneden",
+		"loss_below_abs":"Totaal verlies naar beneden"
 
 
     },

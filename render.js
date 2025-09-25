@@ -20,7 +20,6 @@ function initializePage(container_id) {
 		createElement('button', { id: 'helpButton' }, '',[],tooltipKey=translate("help"))
 	
     ]);
-	//createElement('button', { id: 'exportDocxBtn' }, '',[getIcon("docx")])
 
 	
 
@@ -465,9 +464,6 @@ function renderHome(){
 	
 	document.getElementById("load_example_button").onclick = () => handleLoadExample('example1');
 	document.getElementById("load_example_button").addEventListener("click", () => {trackEvent("loadExample", "main", {});});
-
-
-	//document.getElementById('example1_img').innerHTML = getImage('example1')
 	
 	
 }
@@ -724,32 +720,9 @@ function renderResults(){
     resultsDiv.appendChild(table);
 	
 	
-	//var extraloss = document.createElement("p")
-	//extraloss.innerHTML = floorModel.getTotalLoss()
 	//include floorheating total loss
 	if (floorModel.loops.length > 0){
-		/*const row = document.createElement("tr");
-		const spaceCell = document.createElement("td");
-		spaceCell.textContent = "FLOOR";
-		row.appendChild(spaceCell);
 
-		const values = [
-			null,
-			null,
-			null, 
-			floorModel.getTotalLoss(),
-			null
-			
-		];
-		// Append cells and update totals
-		values.forEach((value, index) => {
-			const cell = document.createElement("td");
-			if (value != null) {cell.textContent = value.toFixed(0);}
-			row.appendChild(cell);
-			if (totals[index]!=null){totals[index] += value;}
-		});
-
-		table.appendChild(row);		*/
 		var restable = createElement('table',{style:"width:35%"},'',children=
 										[createElement('tr',{},'',children=[
 											createElement('th',{'lang-key':"floorheating_total_loss"},translate('floorheating_total_loss'),children=[]),
@@ -848,8 +821,11 @@ function renderWallInstances() {
 			//console.log(spaceDiv)
 
 
-			header = document.createElement("h3")
-			header.textContent = `Space: ${space.name}`;
+			header = createElement('h3',{},'',[
+												createElement('span',{'lang-key':'space'},'',[]),
+												createElement('span',{},': '+space.name,[])
+												])
+												
 			spaceDiv.appendChild(header);
 	 
 			const addButton = document.createElement('button');
@@ -1896,7 +1872,8 @@ function renderLoopTable(){
 					{value:0.05,label:0.05},
 					{value:0.10,label:0.1},
 					{value:0.15,label:0.15}],		
-			onchange: (event, row) => handleLoopRChange(event, row)
+			onchange: (event, row) => handleLoopRChange(event, row),
+			tooltip: "resistance_of_floor_cover"
 		},
 		{ header: "tubeSpacing",
 		  type: "select", 
@@ -1906,7 +1883,8 @@ function renderLoopTable(){
 					{value:10,label:10},
 					{value:15,label:15},
 					{value:20,label:20}],		
-			onchange: (event, row) => handleLoopSpacingChange(event, row)
+			onchange: (event, row) => handleLoopSpacingChange(event, row),
+			tooltip: "tube_spacing"
 		},
 		{ header: "deltaH", type: "text", value: "deltaH" },  
 		{ header: "sigma", type: "text",  value: "sigma"},
@@ -1917,32 +1895,36 @@ function renderLoopTable(){
 		  value: "L0",
 		  min: 1,
 		  step: 1,
-		  oninput: (event, row) => handleL0Change(event, row)
+		  oninput: (event, row) => handleL0Change(event, row),
+		  tooltip: "len_from_collector"
 		  },
-		{ header: "Lr", type: "text", value: "Lr" }, 
+		{ header: "Lr", type: "text", value: "Lr" , tooltip: "tube_length"}, 
 		{ header: "space_below", type: "select", value: "space_below" , 
 		  options: belowSpaces,		
-		  onchange: (event, row) => handleLoopSpaceBelowChange(event, row)
+		  onchange: (event, row) => handleLoopSpaceBelowChange(event, row),
+
 		},
-		{ header: "Tu", type: "text", value: "Tu" }, 
+		{ header: "Tu", type: "text", value: "Tu", tooltip: "temperature_under" }, 
 		{ header: "R0", 
    		  type: "number", 
 		  value: "R0", 
 		  step: 0.1,
 		  min: 0.0,
-          oninput: (event, row) => handleFloorR0Change(event, row)
+          oninput: (event, row) => handleFloorR0Change(event, row),
+		  tooltip: "resistance_upper"
 		},  
 		{ header: "Ru", 
    		  type: "number", 
 		  value: "Ru", 
 		  step: 0.1,
 		  min: 0.0,
-          oninput: (event, row) => handleFloorRuChange(event, row)
+          oninput: (event, row) => handleFloorRuChange(event, row),
+		  tooltip: "resistance_under"
 		},  
-		{ header: "q_under", type: "text", value: "qu" }, 
+		{ header: "q_under", type: "text", value: "qu", tooltip: "loss_below_m2" }, 
 		{ header: "mh_kg_s", type: "text", value: "mh_kg_s" },
 		{ header: "mh_l_h", type: "text", value: "mh_l_h" },
-		{ header : "qu_abs", type:"text", value : "qu_abs"}
+		{ header : "qu_abs", type:"text", value : "qu_abs", tooltip:"loss_below_abs"}
 		]
 
 		

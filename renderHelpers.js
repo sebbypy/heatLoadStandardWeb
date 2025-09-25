@@ -74,6 +74,18 @@ function renderTable(table, columns, data, headerrow = true) {
 			const th = document.createElement("th");
 			th.textContent = translate(col.header);
 			th.setAttribute('lang-key',col.header);
+			
+			if ('tooltip' in col){
+				th.classList.add('tooltip'); // Ensure it has the tooltip styling
+
+				const tooltipSpan = document.createElement('span');
+				tooltipSpan.className = 'tooltiptext';
+				tooltipSpan.setAttribute('lang-key', col.tooltip);
+				tooltipSpan.innerText = translations[getCurrentLanguage()][tooltipKey]
+
+				th.appendChild(tooltipSpan);
+			}
+			
 			headerRow.appendChild(th);
 		});
 		thead.appendChild(headerRow);
@@ -167,7 +179,7 @@ function renderTable(table, columns, data, headerrow = true) {
 				cb.type = "checkbox"
 				cb.checked = rowData[col.value]
 				cb.onchange = (e) => col.onchange(e,rowData)
-				if (col.disabled !== undefined){ console.log(col.disabled) ;if (typeof(col.disabled) == "string") {console.log("STRING", rowData[col.disabled]);cb.disabled = rowData[col.disabled];} else {console.log("NOT STRING"); cb.disabled = col.disabled}}
+				if (col.disabled !== undefined){ if (typeof(col.disabled) == "string") {cb.disabled = rowData[col.disabled];} else {cb.disabled = col.disabled}}
 
 				td.appendChild(cb)
 			}
